@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #eae8e1;
+  --pledge: #3B6D11;
+  --betray: #993C1D;
+}
+
+body {
+  background-color: #eae8e1;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: #111;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #eae8e1; }
+::-webkit-scrollbar-thumb { background: #d8d4cc; border-radius: 2px; }
+
+/* Tavern auto-scroll */
+.tavern-scroll-container {
+  overflow: hidden;
+  position: relative;
+}
+.tavern-scroll-track {
+  animation: scroll-up 40s linear infinite;
+}
+.tavern-scroll-track:hover {
+  animation-play-state: paused;
+}
+@keyframes scroll-up {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+/* Card entrance animation */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 350ms ease forwards;
+}
+
+/* Slide in from left */
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slide-in-left 400ms ease forwards;
+}
+
+/* Chat bubble appear */
+@keyframes bubble-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes bubble-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.bubble-in-left { animation: bubble-in-left 250ms ease forwards; }
+.bubble-in-right { animation: bubble-in-right 250ms ease forwards; }
