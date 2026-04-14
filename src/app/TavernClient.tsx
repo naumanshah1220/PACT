@@ -9,10 +9,21 @@ import type { WagerWithUser, UserRow } from '@/types/database'
 
 type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
 
+interface ActiveDuel {
+  id: string
+  player1_id: string
+  player2_id: string
+  deadline: string
+  wagers: { gold_amount: number }
+  player1: { username: string; display_initials: string }
+  player2: { username: string; display_initials: string }
+}
+
 interface Props {
   initialWagers: WagerWithUser[]
   currentUser: UserRow | null
   hoardBalance: number
+  activeDuels: ActiveDuel[]
 }
 
 function timeAgo(ts: string) {
@@ -28,8 +39,34 @@ function formatTimer(mins: number) {
   return `${mins / 1440}d`
 }
 
-function WagerCard({ wager, index }: { wager: WagerWithUser; index: number }) {
+function ActiveDuelCard({ duel, currentUserId }: { duel: ActiveDuel; currentUserId: string }) {
+  const isP1 = duel.player1_id === currentUserId
+  const opponent = isP1 ? duel.player2 : duel.player1
+  const remaining = Math.max(0, new Date(duel.deadline).getTime() - Date.now())
+  const h = Math.floor(remaining / 3600000)
+  const m = Math.floor((remaining % 3600000) / 60000)
+  const timeLeft = h > 0 ? `${h}h ${m}m left` : `${m}m left`
+
+  return (
+    <Link
+      href={`/duel/${duel.id}`}
+      className="bg-white border-2 border-[#3B6D11] rounded-[12px] p-4 flex items-center justify-between hover:shadow-sm transition-shadow animate-fade-up"
+    >
+      <div className="flex items-center gap-3">
+        <Avatar initials={opponent.display_initials} size="sm" />
+        <div>
+          <p className="font-sans text-sm font-medium">vs {opponent.username}</p>
+          <p className="font-mono text-[10px] text-[#888]">{timeLeft} · {duel.wagers.gold_amount} gold</p>
+        </div>
+      </div>
+      <span className="font-mono text-xs text-[#3B6D11]">Enter →</span>
+    </Link>
+  )
+}
+
+function WagerCard({ wager, currentUserId, index }: { wager: WagerWithUser; currentUserId: string | null; index: number }) {
   const router = useRouter()
+  const isOwn = currentUserId === wager.poster_id
 
   async function handleChallenge() {
     const res = await fetch('/api/accept-wager', {
@@ -44,7 +81,7 @@ function WagerCard({ wager, index }: { wager: WagerWithUser; index: number }) {
 
   return (
     <div
-      className="bg-white border border-[#d8d4cc] rounded-[12px] p-4 cursor-pointer hover:shadow-sm transition-shadow animate-fade-up"
+      className="bg-white border border-[#d8d4cc] rounded-[12px] p-4 hover:shadow-sm transition-shadow animate-fade-up"
       style={{ animationDelay: `${index * 60}ms` }}
     >
       <div className="flex items-start justify-between mb-3">
@@ -60,20 +97,26 @@ function WagerCard({ wager, index }: { wager: WagerWithUser; index: number }) {
 
       <p className="font-sans text-sm font-medium mb-1">{wager.users.username}</p>
       <p className="font-mono text-[10px] text-[#888] mb-3">
-        posted {timeAgo(wager.created_at)} &middot; timer: {formatTimer(wager.timer_minutes)}
+        posted {timeAgo(wager.created_at)} · timer: {formatTimer(wager.timer_minutes)}
       </p>
 
-      <button
-        onClick={handleChallenge}
-        className="w-full border border-[#d8d4cc] rounded-lg py-2 font-sans text-sm font-medium hover:bg-[#f0ede6] transition-colors"
-      >
-        Challenge →
-      </button>
+      {isOwn ? (
+        <div className="w-full border border-[#d8d4cc] rounded-lg py-2 text-center font-mono text-[11px] text-[#bbb]">
+          Your challenge — awaiting opponent
+        </div>
+      ) : (
+        <button
+          onClick={handleChallenge}
+          className="w-full border border-[#d8d4cc] rounded-lg py-2 font-sans text-sm font-medium hover:bg-[#f0ede6] transition-colors"
+        >
+          Challenge →
+        </button>
+      )}
     </div>
   )
 }
 
-export default function TavernClient({ initialWagers, currentUser, hoardBalance }: Props) {
+export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels }: Props) {
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -98,6 +141,9 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance 
   }, [initialWagers, filter, search])
 
   const isFiltered = filter !== 'all' || search.trim() !== ''
+
+  // Only use the scroll animation with enough cards to make a seamless loop
+  const useScroll = !isFiltered && filtered.length >= 4
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -135,6 +181,18 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance 
         )}
       </div>
 
+      {/* Active duels — shown to logged in users */}
+      {activeDuels.length > 0 && (
+        <div className="mb-6">
+          <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-2">Your Active Duels</p>
+          <div className="space-y-2">
+            {activeDuels.map(d => (
+              <ActiveDuelCard key={d.id} duel={d} currentUserId={currentUser!.id} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Hoard announcement */}
       {hoardBalance < 100 && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
@@ -153,7 +211,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance 
           onChange={e => setSearch(e.target.value)}
           className="w-full border border-[#d8d4cc] rounded-lg px-3 py-2 bg-white font-sans text-sm mb-2 focus:outline-none focus:border-[#aaa]"
         />
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {filters.map(f => (
             <button
               key={f.key}
@@ -180,23 +238,23 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance 
         <div className="text-center py-20">
           <p className="font-mono text-sm text-[#888]">No challenges found.</p>
         </div>
-      ) : isFiltered ? (
-        // Static grid when filtered
-        <div className="grid grid-cols-2 gap-3">
-          {filtered.map((w, i) => <WagerCard key={w.id} wager={w} index={i} />)}
-        </div>
-      ) : (
-        // Auto-scrolling when unfiltered
+      ) : useScroll ? (
         <div className="tavern-scroll-container h-[560px]">
           <div className="tavern-scroll-track grid grid-cols-2 gap-3">
             {[...filtered, ...filtered].map((w, i) => (
-              <WagerCard key={`${w.id}-${i}`} wager={w} index={i % filtered.length} />
+              <WagerCard key={`${w.id}-${i}`} wager={w} currentUserId={currentUser?.id ?? null} index={i % filtered.length} />
             ))}
           </div>
         </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {filtered.map((w, i) => (
+            <WagerCard key={w.id} wager={w} currentUserId={currentUser?.id ?? null} index={i} />
+          ))}
+        </div>
       )}
 
-      {/* Links to other pages */}
+      {/* Links */}
       <div className="mt-10 flex gap-4 justify-center">
         {[
           { href: '/nobles', label: 'Nobles' },
@@ -213,7 +271,6 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance 
         ))}
       </div>
 
-      {/* Modal */}
       {showModal && currentUser && (
         <PostChallengeModal
           currentUser={currentUser}
