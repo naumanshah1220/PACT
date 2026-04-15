@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import PactHeader from '@/components/PactHeader'
@@ -9,19 +10,17 @@ export default async function AlmsPage() {
   const { data: { user: authUser } } = await supabase.auth.getUser()
   if (!authUser) redirect('/login')
 
-  const { data: profile } = await supabase.from('users').select('*').eq('id', authUser.id).single()
+  const admin = createAdminClient()
 
-  const { data: donations } = await supabase
-    .from('alms_donations')
-    .select('*, donor:users!alms_donations_donor_id_fkey(username, display_initials), recipient:users!alms_donations_recipient_id_fkey(username, display_initials)')
-    .order('created_at', { ascending: false })
-    .limit(30)
-
-  const { data: players } = await supabase
-    .from('users')
-    .select('id, username, display_initials, gold_balance')
-    .neq('id', authUser.id)
-    .order('username')
+  const [{ data: profile }, { data: requests }] = await Promise.all([
+    admin.from('users').select('*').eq('id', authUser.id).single(),
+    admin
+      .from('alms_requests')
+      .select('*, requester:users!alms_requests_requester_id_fkey(id, username, display_initials, player_number)')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ])
 
   return (
     <>
@@ -29,8 +28,7 @@ export default async function AlmsPage() {
       <PactHeader />
       <AlmsClient
         currentUser={profile!}
-        donations={donations ?? []}
-        players={players ?? []}
+        requests={requests ?? []}
       />
     </>
   )

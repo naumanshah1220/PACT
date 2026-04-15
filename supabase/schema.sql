@@ -2,6 +2,7 @@
 create extension if not exists "uuid-ossp";
 
 -- USERS
+create sequence if not exists player_number_seq start 1001;
 create table public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
@@ -11,6 +12,7 @@ create table public.users (
   is_banned boolean not null default false,
   banned_until timestamptz,
   newbie_day integer not null default 1,
+  player_number integer unique default nextval('player_number_seq'),
   created_at timestamptz not null default now()
 );
 
@@ -50,12 +52,23 @@ create table public.messages (
   created_at timestamptz not null default now()
 );
 
--- ALMS DONATIONS
+-- ALMS DONATIONS (history log)
 create table public.alms_donations (
   id uuid primary key default uuid_generate_v4(),
   donor_id uuid not null references public.users(id),
   recipient_id uuid not null references public.users(id),
   gold_amount integer not null check (gold_amount > 0),
+  created_at timestamptz not null default now()
+);
+
+-- ALMS REQUESTS (request board)
+create table public.alms_requests (
+  id uuid primary key default uuid_generate_v4(),
+  requester_id uuid not null references public.users(id),
+  gold_amount integer not null check (gold_amount > 0 and gold_amount <= 100),
+  message text check (char_length(message) <= 200),
+  status text not null default 'open' check (status in ('open','fulfilled','cancelled')),
+  fulfilled_by uuid references public.users(id),
   created_at timestamptz not null default now()
 );
 
@@ -72,10 +85,13 @@ create index idx_wagers_poster on public.wagers(poster_id);
 create index idx_duels_players on public.duels(player1_id, player2_id);
 create index idx_duels_status on public.duels(status);
 create index idx_messages_duel on public.messages(duel_id, created_at);
+create index idx_alms_requests_status on public.alms_requests(status);
+create index idx_alms_requests_requester on public.alms_requests(requester_id);
 
 -- REALTIME
 alter publication supabase_realtime add table public.messages;
 alter publication supabase_realtime add table public.duels;
+alter publication supabase_realtime add table public.wagers;
 
 -- ROW LEVEL SECURITY
 alter table public.users enable row level security;
@@ -83,6 +99,7 @@ alter table public.wagers enable row level security;
 alter table public.duels enable row level security;
 alter table public.messages enable row level security;
 alter table public.alms_donations enable row level security;
+alter table public.alms_requests enable row level security;
 alter table public.hoard enable row level security;
 
 -- USERS policies
@@ -124,9 +141,14 @@ create policy "Duel participants can send messages" on public.messages for inser
   )
 );
 
--- ALMS policies
+-- ALMS DONATIONS policies
 create policy "Anyone can read alms" on public.alms_donations for select using (true);
 create policy "Authenticated can donate" on public.alms_donations for insert with check (auth.uid() = donor_id);
+
+-- ALMS REQUESTS policies
+create policy "Anyone can read open alms requests" on public.alms_requests for select using (true);
+create policy "Authenticated can post alms request" on public.alms_requests for insert with check (auth.uid() = requester_id);
+create policy "Requester can cancel own request" on public.alms_requests for update using (auth.uid() = requester_id);
 
 -- HOARD policies
 create policy "Anyone can read hoard" on public.hoard for select using (true);
