@@ -21,20 +21,20 @@ body {
 ::-webkit-scrollbar-track { background: #eae8e1; }
 ::-webkit-scrollbar-thumb { background: #d8d4cc; border-radius: 2px; }
 
-/* Tavern auto-scroll */
+/* Tavern auto-scroll (3x duplication → scroll exactly 1 copy = 33.333%) */
 .tavern-scroll-container {
   overflow: hidden;
   position: relative;
 }
 .tavern-scroll-track {
-  animation: scroll-up 40s linear infinite;
+  animation: scroll-up 48s linear infinite;
 }
 .tavern-scroll-track:hover {
   animation-play-state: paused;
 }
 @keyframes scroll-up {
   0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
+  100% { transform: translateY(-33.333%); }
 }
 
 /* Card entrance animation */
@@ -66,3 +66,12 @@ body {
 }
 .bubble-in-left { animation: bubble-in-left 250ms ease forwards; }
 .bubble-in-right { animation: bubble-in-right 250ms ease forwards; }
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}

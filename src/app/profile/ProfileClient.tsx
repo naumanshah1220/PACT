@@ -4,11 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import { createClient } from '@/lib/supabase/client'
-import type { UserRow, DuelWithUsers } from '@/types/database'
+import type { UserRow } from '@/types/database'
 
 function DuelRow({ duel, userId }: { duel: any; userId: string }) {
   const isP1 = duel.player1_id === userId
-  const me = isP1 ? duel.player1 : duel.player2
   const opp = isP1 ? duel.player2 : duel.player1
   const stake = duel.wagers.gold_amount
   const outcome = duel.outcome
@@ -71,9 +70,14 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
           <Avatar initials={profile.display_initials} size="lg" />
           <div className="flex-1">
             <h1 className="font-serif text-2xl font-bold">{profile.username}</h1>
-            <p className="font-mono text-[10px] text-[#888] uppercase tracking-widest mt-0.5">
-              Day {profile.newbie_day} adventurer
-            </p>
+            <div className="flex items-center gap-3 mt-0.5">
+              {profile.player_number !== null && profile.player_number !== undefined && (
+                <span className="font-mono text-[11px] text-[#bbb]">#{profile.player_number}</span>
+              )}
+              <p className="font-mono text-[10px] text-[#888] uppercase tracking-widest">
+                Day {profile.newbie_day} adventurer
+              </p>
+            </div>
           </div>
           <button
             onClick={handleSignOut}
