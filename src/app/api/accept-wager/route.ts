@@ -15,6 +15,16 @@ export async function POST(req: Request) {
   if (wager.status !== 'open') return NextResponse.json({ error: 'Wager already taken' }, { status: 409 })
   if (wager.poster_id === user.id) return NextResponse.json({ error: 'Cannot challenge yourself' }, { status: 400 })
 
+  // Block if challenger is already in an active duel
+  const { data: activeDuels } = await supabase
+    .from('duels')
+    .select('id')
+    .eq('status', 'active')
+    .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
+    .limit(1)
+  if (activeDuels && activeDuels.length > 0)
+    return NextResponse.json({ error: 'Finish your current duel before starting another' }, { status: 400 })
+
   // Check challenger balance
   const { data: challenger } = await supabase.from('users').select('*').eq('id', user.id).single()
   if (!challenger) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })

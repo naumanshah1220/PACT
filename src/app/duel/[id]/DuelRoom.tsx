@@ -21,10 +21,7 @@ function TimerBar({ deadline }: { deadline: string }) {
     function tick() {
       const now = Date.now()
       const end = new Date(deadline).getTime()
-      // We need start: approximate as end - timer duration (from duel created_at ideally)
-      // Use remaining / total where total derived from context
       const remaining = Math.max(0, end - now)
-      const totalMs = end - (end - 24 * 60 * 60 * 1000) // fallback
       const h = Math.floor(remaining / 3600000)
       const m = Math.floor((remaining % 3600000) / 60000)
       const s = Math.floor((remaining % 60000) / 1000)
@@ -88,7 +85,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         table: 'messages',
         filter: `duel_id=eq.${duel.id}`,
       }, async (payload) => {
-        // Fetch sender info
         const { data } = await supabase
           .from('messages')
           .select('*, users(*)')
@@ -144,7 +140,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const myDecision = isP1 ? liveDuel.player1_decision : liveDuel.player2_decision
   const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
   const canSeal = !!myDecision && opponentDecided
-  const sealRequested = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
+  const iHaveSealed = liveDuel.seal_requested_by === currentUserId
+  const theyHaveSealed = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
 
   async function sendMessage() {
     if (!input.trim() || sending) return
@@ -156,7 +153,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       sender_id: currentUserId,
       content,
     })
-    // Mark messaged
     const field = isP1 ? 'player1_messaged' : 'player2_messaged'
     await supabase.from('duels').update({ [field]: true }).eq('id', duel.id)
     setSending(false)
@@ -305,18 +301,35 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
         {canSeal && (
           <div className="mt-3">
-            {sealRequested ? (
-              <div className="text-center font-mono text-[11px] text-[#3B6D11] mb-2">
-                Your opponent requests The Seal. Confirm below.
+            {iHaveSealed ? (
+              // I already sealed — show waiting state
+              <div className="w-full border border-[#d8d4cc] rounded-xl py-2.5 font-mono text-xs tracking-widest uppercase text-center text-[#aaa]">
+                Your seal is placed — awaiting opponent
               </div>
-            ) : null}
-            <button
-              onClick={requestSeal}
-              disabled={sealLoading}
-              className="w-full border border-[#111] rounded-xl py-2.5 font-mono text-xs tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors"
-            >
-              {sealLoading ? 'Sealing…' : 'The Seal — Reveal Now'}
-            </button>
+            ) : theyHaveSealed ? (
+              // Opponent sealed first — prompt me to confirm
+              <>
+                <div className="text-center font-mono text-[11px] text-[#3B6D11] mb-2">
+                  Your opponent has sealed. Add your seal to reveal.
+                </div>
+                <button
+                  onClick={requestSeal}
+                  disabled={sealLoading}
+                  className="w-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 rounded-xl py-2.5 font-mono text-xs tracking-widest uppercase hover:bg-[#3B6D11] hover:text-white transition-colors text-[#3B6D11]"
+                >
+                  {sealLoading ? 'Sealing…' : 'Confirm Seal'}
+                </button>
+              </>
+            ) : (
+              // Neither has sealed yet
+              <button
+                onClick={requestSeal}
+                disabled={sealLoading}
+                className="w-full border border-[#111] rounded-xl py-2.5 font-mono text-xs tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors"
+              >
+                {sealLoading ? 'Sealing…' : 'The Seal — Reveal Now'}
+              </button>
+            )}
           </div>
         )}
       </div>

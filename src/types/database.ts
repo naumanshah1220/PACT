@@ -13,6 +13,7 @@ export interface Database {
           is_banned: boolean
           banned_until: string | null
           newbie_day: number
+          player_number: number | null
           created_at: string
         }
         Insert: {
@@ -24,6 +25,7 @@ export interface Database {
           is_banned?: boolean
           banned_until?: string | null
           newbie_day?: number
+          player_number?: number | null
           created_at?: string
         }
         Update: {
@@ -35,6 +37,7 @@ export interface Database {
           is_banned?: boolean
           banned_until?: string | null
           newbie_day?: number
+          player_number?: number | null
           created_at?: string
         }
       }
@@ -157,6 +160,35 @@ export interface Database {
           created_at?: string
         }
       }
+      alms_requests: {
+        Row: {
+          id: string
+          requester_id: string
+          gold_amount: number
+          message: string | null
+          status: 'open' | 'fulfilled' | 'cancelled'
+          fulfilled_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          requester_id: string
+          gold_amount: number
+          message?: string | null
+          status?: 'open' | 'fulfilled' | 'cancelled'
+          fulfilled_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          requester_id?: string
+          gold_amount?: number
+          message?: string | null
+          status?: 'open' | 'fulfilled' | 'cancelled'
+          fulfilled_by?: string | null
+          created_at?: string
+        }
+      }
       hoard: {
         Row: {
           id: string
@@ -185,6 +217,7 @@ export type WagerRow = Database['public']['Tables']['wagers']['Row']
 export type DuelRow = Database['public']['Tables']['duels']['Row']
 export type MessageRow = Database['public']['Tables']['messages']['Row']
 export type AlmsDonationRow = Database['public']['Tables']['alms_donations']['Row']
+export type AlmsRequestRow = Database['public']['Tables']['alms_requests']['Row']
 export type HoardRow = Database['public']['Tables']['hoard']['Row']
 
 export type WagerWithUser = WagerRow & { users: UserRow }
@@ -194,3 +227,7 @@ export type DuelWithUsers = DuelRow & {
   player2: UserRow
 }
 export type MessageWithUser = MessageRow & { users: UserRow }
+export type AlmsRequestWithUser = AlmsRequestRow & {
+  requester: UserRow
+  fulfiller: UserRow | null
+}
