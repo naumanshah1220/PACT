@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=IM+Fell+English:ital@0;1&family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
   --bg: #eae8e1;
@@ -66,3 +66,12 @@ body {
 }
 .bubble-in-left { animation: bubble-in-left 250ms ease forwards; }
 .bubble-in-right { animation: bubble-in-right 250ms ease forwards; }
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}

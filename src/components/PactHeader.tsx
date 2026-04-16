@@ -26,8 +26,8 @@ export default function PactHeader() {
       <div className="max-w-2xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex flex-col">
-            <span className="font-serif text-4xl font-bold leading-none tracking-tight">PACT</span>
-            <div className="flex items-center gap-2 mt-0.5">
+            <span className="font-cinzel text-[2rem] font-bold leading-none">PACT</span>
+            <div className="flex items-center gap-2 mt-1">
               <div className="h-[1.5px] w-6 bg-black" />
               <span className="font-mono text-[11px] tracking-[0.18em] uppercase">A Game of Trust</span>
             </div>

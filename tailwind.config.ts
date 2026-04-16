@@ -23,6 +23,9 @@ const config: Config = {
         serif: ['Playfair Display', 'Georgia', 'serif'],
         sans: ['DM Sans', 'system-ui', 'sans-serif'],
         mono: ['DM Mono', 'monospace'],
+        // Medieval accent fonts
+        cinzel: ['Cinzel Decorative', 'serif'],     // wordmark + drop caps only
+        fell: ['IM Fell English', 'Georgia', 'serif'], // page H1 headings
       },
       animation: {
         'scroll-up': 'scroll-up 30s linear infinite',
