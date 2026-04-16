@@ -10,25 +10,28 @@ const config: Config = {
     extend: {
       colors: {
         pact: {
-          bg: '#eae8e1',
-          card: '#ffffff',
-          border: '#d8d4cc',
+          bg: '#e6dfd0',
+          card: '#f0ead8',
+          border: '#cec4ae',
           pledge: '#3B6D11',
           betray: '#993C1D',
-          muted: '#f0ede6',
-          subtle: '#f2f0eb',
+          muted: '#e0d8c8',
+          subtle: '#ede7d6',
+          ink: '#1a1208',
         }
       },
       fontFamily: {
-        serif: ['Playfair Display', 'Georgia', 'serif'],
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        // System contrast labels — keep DM Mono
         mono: ['DM Mono', 'monospace'],
-        // Medieval accent fonts
-        cinzel: ['Cinzel Decorative', 'serif'],     // wordmark + drop caps only
-        fell: ['IM Fell English', 'Georgia', 'serif'], // page H1 headings
+        // UI elements that need to stay clean
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        // Legacy serif (gold amounts, large numbers)
+        serif: ['Playfair Display', 'Georgia', 'serif'],
+        // Primary: IM Fell English for all body + headings
+        fell: ['IM Fell English', 'Georgia', 'serif'],
       },
       animation: {
-        'scroll-up': 'scroll-up 30s linear infinite',
+        'scroll-up': 'scroll-up 40s linear infinite',
         'fade-up': 'fade-up 350ms ease forwards',
         'slide-in-left': 'slide-in-left 400ms ease forwards',
       },

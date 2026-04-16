@@ -1,25 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=IM+Fell+English:ital@0;1&family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg: #eae8e1;
+  --bg: #e6dfd0;
   --pledge: #3B6D11;
   --betray: #993C1D;
+  --ink: #1a1208;
 }
 
 body {
-  background-color: #eae8e1;
-  font-family: 'DM Sans', system-ui, sans-serif;
-  color: #111;
+  background-color: #e6dfd0;
+  font-family: 'IM Fell English', Georgia, serif;
+  color: #1a1208;
+}
+
+/* Paper grain — fixed overlay, no pointer events */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+}
+
+/* Vignette */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9997;
+  background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(26,18,8,0.22) 100%);
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #eae8e1; }
-::-webkit-scrollbar-thumb { background: #d8d4cc; border-radius: 2px; }
+::-webkit-scrollbar-track { background: #e6dfd0; }
+::-webkit-scrollbar-thumb { background: #c9b99a; border-radius: 2px; }
 
 /* Tavern auto-scroll */
 .tavern-scroll-container {
@@ -37,7 +62,7 @@ body {
   100% { transform: translateY(-50%); }
 }
 
-/* Card entrance animation */
+/* Card entrance */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -55,7 +80,7 @@ body {
   animation: slide-in-left 400ms ease forwards;
 }
 
-/* Chat bubble appear */
+/* Chat bubbles */
 @keyframes bubble-in-left {
   from { opacity: 0; transform: translateX(-12px); }
   to { opacity: 1; transform: translateX(0); }
