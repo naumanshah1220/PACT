@@ -18,23 +18,18 @@ export async function POST(req: Request) {
   if (duel.status !== 'active')
     return NextResponse.json({ error: 'Duel not active' }, { status: 400 })
 
-  // If both have decided, resolve immediately
-  if (duel.player1_decision && duel.player2_decision) {
-    await resolveOutcome(duelId, admin)
-    return NextResponse.json({ resolved: true })
-  }
+  const myDecision = duel.player1_id === user.id ? duel.player1_decision : duel.player2_decision
+  if (!myDecision)
+    return NextResponse.json({ error: 'Choose pledge or betray first' }, { status: 400 })
 
-  // Otherwise, record seal request
   if (!duel.seal_requested_by) {
     await admin.from('duels').update({ seal_requested_by: user.id }).eq('id', duelId)
     return NextResponse.json({ sealRequested: true })
   }
 
-  // Other player confirming seal
-  if (duel.seal_requested_by !== user.id) {
-    await resolveOutcome(duelId, admin)
-    return NextResponse.json({ resolved: true })
-  }
+  if (duel.seal_requested_by === user.id)
+    return NextResponse.json({ waiting: true })
 
-  return NextResponse.json({ waiting: true })
+  await resolveOutcome(duelId, admin)
+  return NextResponse.json({ resolved: true })
 }
