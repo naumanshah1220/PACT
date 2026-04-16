@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Avatar from '@/components/Avatar'
 import PostChallengeModal from '@/components/PostChallengeModal'
+import HoardAnnouncement from '@/components/HoardAnnouncement'
 import type { WagerWithUser, UserRow } from '@/types/database'
 
 type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
@@ -22,8 +23,8 @@ interface ActiveDuel {
 interface Props {
   initialWagers: WagerWithUser[]
   currentUser: UserRow | null
-  hoardBalance: number
   activeDuels: ActiveDuel[]
+  latestAnnouncement: { id: string; message: string } | null
 }
 
 function timeAgo(ts: string) {
@@ -116,7 +117,7 @@ function WagerCard({ wager, currentUserId, index }: { wager: WagerWithUser; curr
   )
 }
 
-export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels }: Props) {
+export default function TavernClient({ initialWagers, currentUser, activeDuels, latestAnnouncement }: Props) {
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -141,8 +142,6 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
   }, [initialWagers, filter, search])
 
   const isFiltered = filter !== 'all' || search.trim() !== ''
-
-  // Only use the scroll animation with enough cards to make a seamless loop
   const useScroll = !isFiltered && filtered.length >= 4
 
   const filters: { key: FilterType; label: string }[] = [
@@ -181,7 +180,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         )}
       </div>
 
-      {/* Active duels — shown to logged in users */}
+      {/* Active duels */}
       {activeDuels.length > 0 && (
         <div className="mb-6">
           <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-2">Your Active Duels</p>
@@ -194,13 +193,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       )}
 
       {/* Hoard announcement */}
-      {hoardBalance < 100 && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
-          <p className="font-mono text-[11px] text-amber-700">
-            ⬡ The Hoard has been refilled with 200 Gold.
-          </p>
-        </div>
-      )}
+      <HoardAnnouncement announcement={latestAnnouncement} />
 
       {/* Filter bar */}
       <div className="sticky top-[57px] z-40 bg-[#eae8e1] pb-3 pt-1">

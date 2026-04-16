@@ -23,7 +23,6 @@ export default async function TavernPage() {
     const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
     currentUser = data
 
-    // Fetch active duels so the poster can access their own duel room
     const { data: duels } = await supabase
       .from('duels')
       .select('id, wager_id, player1_id, player2_id, deadline, wagers(gold_amount), player1:users!duels_player1_id_fkey(username, display_initials), player2:users!duels_player2_id_fkey(username, display_initials)')
@@ -33,7 +32,13 @@ export default async function TavernPage() {
     activeDuels = duels ?? []
   }
 
-  const { data: hoard } = await supabase.from('hoard').select('balance').single()
+  // Fetch latest hoard announcement for dismissible banner
+  const { data: announcementData } = await supabase
+    .from('hoard_announcements')
+    .select('id, message')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   return (
     <>
@@ -42,8 +47,8 @@ export default async function TavernPage() {
       <TavernClient
         initialWagers={wagers ?? []}
         currentUser={currentUser}
-        hoardBalance={hoard?.balance ?? 0}
         activeDuels={activeDuels}
+        latestAnnouncement={announcementData ?? null}
       />
     </>
   )
