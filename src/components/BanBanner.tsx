@@ -26,7 +26,7 @@ export default function BanBanner() {
 
   const d = new Date(bannedUntil)
   return (
-    <div className="bg-[#993C1D] text-white text-center py-2 px-4">
+    <div className="bg-[#faece7] border-b border-[#993C1D] text-[#993C1D] text-center py-2 px-4">
       <span className="font-mono text-xs tracking-wide">
         You are banished until {d.toLocaleString()}. Honour demands patience.
       </span>

@@ -1,16 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import PactHeader from '@/components/PactHeader'
 import Link from 'next/link'
+import NoblesClient from './NoblesClient'
 
 export const revalidate = 60
 
 export default async function NoblesPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: nobles } = await supabase
     .from('users')
-    .select('id, username, gold_balance')
+    .select('id, username, gold_balance, player_number')
     .order('gold_balance', { ascending: false })
-    .limit(50)
+    .range(0, 19)
 
   return (
     <>
@@ -23,20 +26,11 @@ export default async function NoblesPage() {
           </p>
         </div>
 
-        <div className="space-y-0">
-          {(nobles ?? []).map((n, i) => (
-            <div key={n.id} className="flex items-center justify-between py-3 border-b border-[#f0ede6]">
-              <div className="flex items-center gap-4">
-                <span className="font-mono text-[11px] text-[#bbb] w-6">{String(i + 1).padStart(2, '0')}</span>
-                <span className="font-sans text-sm font-medium">{n.username}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-amber-600 text-xs">⬡</span>
-                <span className="font-serif text-base font-bold">{n.gold_balance}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <NoblesClient
+          initialNobles={nobles ?? []}
+          currentUserId={user?.id ?? null}
+          initialOffset={nobles?.length ?? 0}
+        />
 
         <div className="mt-8">
           <Link href="/" className="font-mono text-[11px] text-[#888] hover:text-[#111]">← Tavern</Link>
