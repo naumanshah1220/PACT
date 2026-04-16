@@ -3,279 +3,345 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PACT — Font Options</title>
+<title>PACT — Design Preview</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Germania+One&family=Uncial+Antiqua&family=IM+Fell+English:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:#e8e4d9;color:#1a1208;font-family:'DM Sans',sans-serif}
 
-/* nav */
-.nav{position:sticky;top:0;z-index:99;background:#1a1208;display:flex;gap:0}
-.nav a{color:#c9b97a;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:12px 24px;text-decoration:none;border-right:1px solid #2e2510}
-.nav a:hover{background:#2e2510}
+body{
+  background:#e6dfd0;
+  color:#1a1208;
+  font-family:'IM Fell English',Georgia,serif;
+  min-height:100vh;
+  position:relative;
+}
 
-/* shared */
-.section{min-height:100vh;padding:64px 48px;border-bottom:2px solid #1a1208;position:relative}
-.section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 10%,rgba(201,185,122,.08) 0%,transparent 60%);pointer-events:none}
+/* Grain */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  pointer-events:none;z-index:9998;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
+  opacity:.04;mix-blend-mode:multiply;
+}
+/* Vignette */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  pointer-events:none;z-index:9997;
+  background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(26,18,8,.22) 100%);
+}
 
-.option-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#c9b97a;margin-bottom:48px}
+mono{font-family:'DM Mono',monospace;}
+.m{font-family:'DM Mono',monospace;}
 
-/* ornamental rule */
-.rule{display:flex;align-items:center;gap:12px;margin:28px 0}
-.rule::before,.rule::after{content:'';flex:1;height:1px;background:#1a1208;opacity:.25}
-.rule span{font-size:10px;opacity:.4;letter-spacing:.1em}
+/* NAV */
+.topnav{
+  position:sticky;top:0;z-index:200;
+  background:#e6dfd0;
+  border-bottom:1px solid #cec4ae;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 24px;
+}
+.wordmark{font-family:'IM Fell English',serif;font-size:2rem;line-height:1;letter-spacing:-.01em;}
+.tagline{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#888;display:flex;align-items:center;gap:6px;margin-top:4px}
+.tagline::before{content:'';width:20px;height:1px;background:#888;display:inline-block}
+.nav-right{display:flex;align-items:center;gap:10px}
+.pill{font-family:'DM Mono',monospace;font-size:11px;border:1px solid #cec4ae;border-radius:999px;padding:6px 14px;background:#f0ead8;display:flex;align-items:center;gap:6px}
+.avatar-sm{width:32px;height:32px;border-radius:50%;background:#ddd5c0;border:1px solid #cec4ae;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:500}
 
-/* wordmark block */
-.wordmark-block{margin-bottom:48px}
-.wordmark{line-height:1;letter-spacing:-.01em;color:#1a1208}
-.sub{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#888;margin-top:6px;display:flex;align-items:center;gap:8px}
-.sub::before{content:'';display:inline-block;width:24px;height:1px;background:#888}
+/* SECTIONS */
+.section{max-width:680px;margin:0 auto;padding:48px 24px;}
+.section+.section{border-top:1px solid rgba(26,18,8,.1)}
 
-/* heading block */
-.heading-block{margin-bottom:40px}
-.h1{line-height:1.05;color:#1a1208;margin-bottom:6px}
-.eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#888}
+/* ornament */
+.orn{display:flex;align-items:center;gap:10px;margin:24px 0}
+.orn::before,.orn::after{content:'';flex:1;height:1px;background:rgba(26,18,8,.2)}
+.orn span{font-size:9px;opacity:.35;letter-spacing:.08em}
 
-/* wager card */
-.card{background:#f5f1e8;border:1px solid #ccc5b0;border-radius:10px;padding:20px;max-width:280px;margin-bottom:16px}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-.avatar{width:32px;height:32px;border-radius:50%;background:#ddd8cc;border:1px solid #ccc5b0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
-.gold-amt{font-size:2rem;font-weight:700;line-height:1}
-.gold-lbl{font-family:'DM Mono',monospace;font-size:10px;color:#888;display:block;text-align:right}
-.player-name{font-size:.9rem;font-weight:500;margin-bottom:2px}
-.card-meta{font-family:'DM Mono',monospace;font-size:10px;color:#888;margin-bottom:14px}
-.btn{width:100%;border:1px solid #ccc5b0;border-radius:8px;padding:8px;font-size:.85rem;background:transparent;cursor:pointer;text-align:center}
-.btn:hover{background:#ede8dc}
+/* eyebrow */
+.eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#888;margin-bottom:6px}
+.h1{font-size:2.6rem;line-height:1.05;margin-bottom:4px}
+.h2{font-size:1.8rem;line-height:1.1;margin-bottom:4px}
 
-/* leaderboard row */
-.lrow{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(26,18,8,.1)}
-.lrow-left{display:flex;align-items:center;gap:14px}
-.rank{font-family:'DM Mono',monospace;font-size:11px;color:#bbb;width:20px}
-.lrow-gold{display:flex;align-items:center;gap:4px}
-.hex{color:#b45309;font-size:13px}
-.lrow-num{font-size:1.1rem;font-weight:700}
+/* WAGER CARD */
+.cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.wcard{
+  background:#f0ead8;
+  border:1px solid #cec4ae;
+  border-radius:10px;
+  padding:18px;
+  position:relative;
+}
+.wcard.new{border-color:#1a1208;border-width:1.5px}
+.wcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.avatar{width:30px;height:30px;border-radius:50%;background:#ddd5c0;border:1px solid #cec4ae;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;font-weight:500}
+.gold-big{font-size:2rem;font-weight:700;line-height:1;font-family:'IM Fell English',serif}
+.gold-lbl{font-family:'DM Mono',monospace;font-size:9px;color:#888;text-align:right;display:block}
+.pname{font-size:.9rem;margin-bottom:2px}
+.pmeta{font-family:'DM Mono',monospace;font-size:9px;color:#888;margin-bottom:12px}
+.btn{
+  width:100%;border:1px solid #cec4ae;border-radius:7px;padding:7px;
+  font-family:'IM Fell English',serif;font-size:.85rem;
+  background:transparent;cursor:pointer;text-align:center;
+  transition:background .15s;
+}
+.btn:hover{background:#e6dfd0}
+.btn-own{color:#aaa;cursor:default}
 
-/* two col */
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;max-width:900px}
-@media(max-width:680px){.cols{grid-template-columns:1fr}}
+/* LEADERBOARD */
+.lboard{margin-top:16px}
+.lrow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 0;border-bottom:1px solid rgba(26,18,8,.08);
+}
+.lrow.me{background:rgba(180,160,100,.12);margin:0 -8px;padding:13px 8px;border-radius:4px}
+.lrow.top{border-left:2px solid #3B6D11;padding-left:10px;margin-left:-12px}
+.lrank{font-family:'DM Mono',monospace;font-size:10px;color:#bbb;width:22px}
+.lname{font-size:.9rem}
+.lgold{display:flex;align-items:center;gap:5px}
+.lgold-n{font-size:1rem;font-weight:700}
 
-/* label font toggle rows */
-.label-demo{margin-top:40px;padding-top:28px;border-top:1px solid rgba(26,18,8,.15)}
-.label-demo-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#aaa;margin-bottom:12px}
-.stat-row{display:flex;gap:20px;align-items:center}
-.stat{}
-.stat-val{font-size:1.5rem;font-weight:700;line-height:1}
-.stat-key-mono{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#888;margin-top:2px}
-.stat-key-fell{font-family:'IM Fell English',serif;font-style:italic;font-size:12px;color:#888;margin-top:2px}
-.divider{width:1px;height:36px;background:rgba(26,18,8,.15)}
+/* SVG ICON placeholders */
+.icon{display:inline-flex;align-items:center;justify-content:center;opacity:.7}
+.icon svg{width:14px;height:14px}
 
-/* OPTION 2: Germania One */
-.opt2 .wordmark{font-family:'Germania One',serif;font-size:4rem}
-.opt2 .h1{font-family:'Germania One',serif;font-size:3rem}
-.opt2 .player-name,.opt2 .btn{font-family:'IM Fell English',serif}
+/* DUEL ROOM */
+.duel-wrap{
+  background:#f0ead8;
+  border:1px solid #cec4ae;
+  border-radius:12px;
+  overflow:hidden;
+  margin-top:20px;
+}
+.duel-header{
+  border-bottom:1px solid #cec4ae;
+  padding:14px 20px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.timer-bar-wrap{height:3px;background:rgba(26,18,8,.1);border-radius:0}
+.timer-bar{height:100%;background:#3B6D11;width:38%;border-radius:0;transition:width 1s linear}
+.chat-area{padding:20px;display:flex;flex-direction:column;gap:10px;min-height:160px}
+.bubble{max-width:70%;padding:10px 14px;border-radius:10px;font-size:.85rem;line-height:1.5}
+.bubble.them{background:#e6dfd0;border:1px solid #cec4ae;align-self:flex-start;border-bottom-left-radius:2px}
+.bubble.me{background:#1a1208;color:#e6dfd0;align-self:flex-end;border-bottom-right-radius:2px}
+.sys{text-align:center;font-family:'DM Mono',monospace;font-size:10px;color:#aaa;font-style:italic}
+.duel-footer{border-top:1px solid #cec4ae;padding:16px 20px;display:flex;gap:10px}
+.dec-btn{
+  flex:1;padding:12px;border-radius:8px;font-family:'IM Fell English',serif;
+  font-size:1rem;border:1px solid #cec4ae;background:transparent;cursor:pointer;
+  transition:all .2s;
+}
+.dec-btn.pledge{border-color:#3B6D11;color:#3B6D11}
+.dec-btn.pledge:hover{background:rgba(59,109,17,.08)}
+.dec-btn.betray{border-color:#993C1D;color:#993C1D}
+.dec-btn.betray:hover{background:rgba(153,60,29,.08)}
 
-/* OPTION 5: Uncial Antiqua */
-.opt5 .wordmark{font-family:'Uncial Antiqua',serif;font-size:3.4rem}
-.opt5 .h1{font-family:'Uncial Antiqua',serif;font-size:2.6rem}
+/* RESULT */
+.result-wrap{
+  background:#f0ead8;
+  border:1px solid #cec4ae;
+  border-radius:12px;
+  padding:40px 32px;
+  text-align:center;
+  margin-top:20px;
+}
+.result-line{width:1px;height:48px;background:#1a1208;opacity:.2;margin:0 auto 24px}
+.result-emoji-sub{font-size:2.8rem;margin-bottom:12px}
+.result-title{font-size:2.2rem;line-height:1.1;margin-bottom:8px}
+.result-sub{font-family:'IM Fell English',serif;font-style:italic;font-size:1rem;color:#666;margin-bottom:24px}
+.result-btns{display:flex;gap:10px;justify-content:center}
+.rbtn{font-family:'DM Mono',monospace;font-size:11px;border:1px solid #cec4ae;border-radius:8px;padding:10px 20px;background:transparent;cursor:pointer}
+.rbtn:hover{background:#e6dfd0}
 
-/* OPTION 8: IM Fell English */
-.opt8 .wordmark{font-family:'IM Fell English',serif;font-size:4.2rem}
-.opt8 .h1{font-family:'IM Fell English',serif;font-size:3rem}
-.opt8 .player-name,.opt8 .btn,.opt8 .card-meta{font-family:'IM Fell English',serif}
-.opt8 .eyebrow{font-family:'IM Fell English',serif;font-style:italic;font-size:11px;letter-spacing:.05em;text-transform:none}
+/* icon placeholder inline SVGs (pen-drawn style approximation) */
+.ico-coin{display:inline-block;width:14px;height:14px}
+.ico-raven{display:inline-block;width:14px;height:14px}
+
+.note{font-family:'DM Mono',monospace;font-size:10px;color:#aaa;letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:12px;border:1px dashed #cec4ae;border-radius:6px;margin-top:8px}
 </style>
 </head>
 <body>
 
-<div class="nav">
-  <a href="#opt2">02 — Germania One</a>
-  <a href="#opt5">05 — Uncial Antiqua</a>
-  <a href="#opt8">08 — IM Fell English</a>
+<!-- HEADER -->
+<header class="topnav">
+  <div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+  </div>
+  <div class="nav-right">
+    <div class="pill">
+      <!-- coin icon placeholder -->
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6.5" cy="6.5" r="5.5" stroke="#b45309" stroke-width="1" fill="none"/><path d="M4 6.5h5M6.5 4v5" stroke="#b45309" stroke-width=".8"/></svg>
+      <span>1,240</span>
+      <span style="color:#aaa">Gold</span>
+    </div>
+    <div class="avatar-sm">BW</div>
+  </div>
+</header>
+
+<!-- TAVERN -->
+<div class="section">
+  <div class="eyebrow">The Tavern</div>
+  <div class="h1">Open Challenges</div>
+  <div class="orn"><span>&#9670;</span></div>
+
+  <div class="cards-grid">
+    <div class="wcard new">
+      <div class="wcard-top">
+        <div class="avatar">SA</div>
+        <div><span class="gold-big">50</span><span class="gold-lbl">gold</span></div>
+      </div>
+      <div class="pname">Sir Aldric</div>
+      <div class="pmeta">posted 2m ago &middot; 30m timer</div>
+      <button class="btn">Challenge &rarr;</button>
+    </div>
+    <div class="wcard">
+      <div class="wcard-top">
+        <div class="avatar">LM</div>
+        <div><span class="gold-big">20</span><span class="gold-lbl">gold</span></div>
+      </div>
+      <div class="pname">Lady Maren</div>
+      <div class="pmeta">posted 14m ago &middot; 1h timer</div>
+      <button class="btn">Challenge &rarr;</button>
+    </div>
+    <div class="wcard">
+      <div class="wcard-top">
+        <div class="avatar">BO</div>
+        <div><span class="gold-big">100</span><span class="gold-lbl">gold</span></div>
+      </div>
+      <div class="pname">Brother Oswin</div>
+      <div class="pmeta">posted 1h ago &middot; 6h timer</div>
+      <button class="btn">Challenge &rarr;</button>
+    </div>
+    <div class="wcard">
+      <div class="wcard-top">
+        <div class="avatar">YO</div>
+        <div><span class="gold-big">10</span><span class="gold-lbl">gold</span></div>
+      </div>
+      <div class="pname">You</div>
+      <div class="pmeta">posted just now &middot; 30m timer</div>
+      <button class="btn btn-own">Awaiting challenger</button>
+    </div>
+  </div>
+
+  <div class="note">&#9670; &nbsp; pen-drawn coin icon replaces &#x2B21; &nbsp; &#9670;</div>
 </div>
 
-<!-- OPTION 2 -->
-<section class="section opt2" id="opt2">
-  <div class="option-label">Option 02 &mdash; Germania One (headings) &nbsp;+&nbsp; IM Fell English (body) &nbsp;+&nbsp; DM Mono (labels)</div>
-  <div class="cols">
-    <div>
-      <div class="wordmark-block">
-        <div class="wordmark">PACT</div>
-        <div class="sub">A Game of Trust</div>
-      </div>
-      <div class="heading-block">
-        <div class="h1">House of<br>Nobles</div>
-        <div class="eyebrow" style="margin-top:8px">Ranked by Gold</div>
-      </div>
-      <div class="rule"><span>&#9670;</span></div>
-      <div class="lrow">
-        <div class="lrow-left"><span class="rank">01</span><span style="font-family:'IM Fell English',serif;font-size:.95rem">Sir Aldric of the North</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">4,210</span></div>
-      </div>
-      <div class="lrow" style="background:rgba(201,185,122,.12);margin:0 -6px;padding:14px 6px">
-        <div class="lrow-left"><span class="rank">02</span><span style="font-family:'IM Fell English',serif;font-size:.95rem">You &mdash; The Merchant</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">1,240</span></div>
-      </div>
-      <div class="lrow">
-        <div class="lrow-left"><span class="rank">03</span><span style="font-family:'IM Fell English',serif;font-size:.95rem">Lady Maren</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">980</span></div>
-      </div>
-    </div>
-    <div>
-      <div class="heading-block">
-        <div class="h1">Open<br>Challenges</div>
-        <div class="eyebrow" style="margin-top:8px">The Tavern Board</div>
-      </div>
-      <div class="rule"><span>&#9670;</span></div>
-      <div class="card">
-        <div class="card-top">
-          <div class="avatar">BW</div>
-          <div><span class="gold-amt">50</span><span class="gold-lbl">gold</span></div>
-        </div>
-        <div class="player-name">Brother Oswin</div>
-        <div class="card-meta">posted 4m ago &middot; timer: 30m</div>
-        <div class="btn">Challenge &rarr;</div>
-      </div>
-      <div class="label-demo">
-        <div class="label-demo-title">Label font — DM Mono (system contrast)</div>
-        <div class="stat-row">
-          <div class="stat"><div class="stat-val">&#x2B21; 1,240</div><div class="stat-key-mono">Gold</div></div>
-          <div class="divider"></div>
-          <div class="stat"><div class="stat-val">14</div><div class="stat-key-mono">Duels</div></div>
-          <div class="divider"></div>
-          <div class="stat"><div class="stat-val">320</div><div class="stat-key-mono">Honour</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- NOBLES -->
+<div class="section">
+  <div class="eyebrow">House of Nobles</div>
+  <div class="h1">Ranked by Gold</div>
+  <div class="orn"><span>&#9670;</span></div>
 
-<!-- OPTION 5 -->
-<section class="section opt5" id="opt5">
-  <div class="option-label">Option 05 &mdash; Uncial Antiqua (headings) &nbsp;+&nbsp; DM Sans (body) &nbsp;+&nbsp; DM Mono (labels)</div>
-  <div class="cols">
-    <div>
-      <div class="wordmark-block">
-        <div class="wordmark">PACT</div>
-        <div class="sub">A Game of Trust</div>
+  <div class="lboard">
+    <div class="lrow top">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="lrank">01</span>
+        <span class="lname">Sir Aldric of the North</span>
       </div>
-      <div class="heading-block">
-        <div class="h1">House of<br>Nobles</div>
-        <div class="eyebrow" style="margin-top:8px">Ranked by Gold</div>
-      </div>
-      <div class="rule"><span>&#9670;</span></div>
-      <div class="lrow">
-        <div class="lrow-left"><span class="rank">01</span><span style="font-size:.95rem">Sir Aldric of the North</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">4,210</span></div>
-      </div>
-      <div class="lrow" style="background:rgba(201,185,122,.12);margin:0 -6px;padding:14px 6px">
-        <div class="lrow-left"><span class="rank">02</span><span style="font-size:.95rem">You &mdash; The Merchant</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">1,240</span></div>
-      </div>
-      <div class="lrow">
-        <div class="lrow-left"><span class="rank">03</span><span style="font-size:.95rem">Lady Maren</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">980</span></div>
+      <div class="lgold">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#b45309" stroke-width="1" fill="none"/><path d="M3.5 6h5M6 3.5v5" stroke="#b45309" stroke-width=".7"/></svg>
+        <span class="lgold-n">4,210</span>
       </div>
     </div>
-    <div>
-      <div class="heading-block">
-        <div class="h1">Open<br>Challenges</div>
-        <div class="eyebrow" style="margin-top:8px">The Tavern Board</div>
+    <div class="lrow top">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="lrank">02</span>
+        <span class="lname">The Unnamed Knight</span>
       </div>
-      <div class="rule"><span>&#9670;</span></div>
-      <div class="card">
-        <div class="card-top">
-          <div class="avatar">BW</div>
-          <div><span class="gold-amt">50</span><span class="gold-lbl">gold</span></div>
-        </div>
-        <div class="player-name">Brother Oswin</div>
-        <div class="card-meta">posted 4m ago &middot; timer: 30m</div>
-        <div class="btn">Challenge &rarr;</div>
+      <div class="lgold">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#b45309" stroke-width="1" fill="none"/><path d="M3.5 6h5M6 3.5v5" stroke="#b45309" stroke-width=".7"/></svg>
+        <span class="lgold-n">2,850</span>
       </div>
-      <div class="label-demo">
-        <div class="label-demo-title">Label font — DM Mono (system contrast)</div>
-        <div class="stat-row">
-          <div class="stat"><div class="stat-val">&#x2B21; 1,240</div><div class="stat-key-mono">Gold</div></div>
-          <div class="divider"></div>
-          <div class="stat"><div class="stat-val">14</div><div class="stat-key-mono">Duels</div></div>
-          <div class="divider"></div>
-          <div class="stat"><div class="stat-val">320</div><div class="stat-key-mono">Honour</div></div>
-        </div>
+    </div>
+    <div class="lrow top">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="lrank">03</span>
+        <span class="lname">Lady Maren</span>
+      </div>
+      <div class="lgold">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#b45309" stroke-width="1" fill="none"/><path d="M3.5 6h5M6 3.5v5" stroke="#b45309" stroke-width=".7"/></svg>
+        <span class="lgold-n">1,640</span>
+      </div>
+    </div>
+    <div class="lrow me">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="lrank">07</span>
+        <span class="lname">Brother Oswin <span style="font-family:'DM Mono',monospace;font-size:9px;color:#888">(you)</span></span>
+      </div>
+      <div class="lgold">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#b45309" stroke-width="1" fill="none"/><path d="M3.5 6h5M6 3.5v5" stroke="#b45309" stroke-width=".7"/></svg>
+        <span class="lgold-n">1,240</span>
+      </div>
+    </div>
+    <div class="lrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="lrank">08</span>
+        <span class="lname">Gerald the Tender</span>
+      </div>
+      <div class="lgold">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#b45309" stroke-width="1" fill="none"/><path d="M3.5 6h5M6 3.5v5" stroke="#b45309" stroke-width=".7"/></svg>
+        <span class="lgold-n">980</span>
       </div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- OPTION 8 -->
-<section class="section opt8" id="opt8">
-  <div class="option-label">Option 08 &mdash; IM Fell English (everything) &nbsp;&mdash;&nbsp; pure manuscript</div>
-  <div class="cols">
-    <div>
-      <div class="wordmark-block">
-        <div class="wordmark">PACT</div>
-        <div class="sub">A Game of Trust</div>
+<!-- DUEL ROOM -->
+<div class="section">
+  <div class="eyebrow">The Duel Room</div>
+  <div class="h1">A Pact is Forming</div>
+  <div class="orn"><span>&#9670;</span></div>
+
+  <div class="duel-wrap">
+    <div class="duel-header">
+      <div>
+        <div style="font-size:.85rem">vs <strong>Sir Aldric</strong></div>
+        <div class="m" style="font-size:9px;color:#888;margin-top:2px">50 gold &middot; 18m remaining</div>
       </div>
-      <div class="heading-block">
-        <div class="h1">House of<br>Nobles</div>
-        <div class="eyebrow" style="margin-top:8px">Ranked by Gold</div>
-      </div>
-      <div class="rule"><span>&#9670;</span></div>
-      <div class="lrow">
-        <div class="lrow-left"><span class="rank">01</span><span style="font-family:'IM Fell English',serif;font-size:.95rem">Sir Aldric of the North</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">4,210</span></div>
-      </div>
-      <div class="lrow" style="background:rgba(201,185,122,.12);margin:0 -6px;padding:14px 6px">
-        <div class="lrow-left"><span class="rank">02</span><span style="font-family:'IM Fell English',serif;font-size:.95rem">You &mdash; The Merchant</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">1,240</span></div>
-      </div>
-      <div class="lrow">
-        <div class="lrow-left"><span class="rank">03</span><span style="font-family:'IM Fell English',serif;font-size:.95rem">Lady Maren</span></div>
-        <div class="lrow-gold"><span class="hex">&#x2B21;</span><span class="lrow-num">980</span></div>
-      </div>
+      <div class="m" style="font-size:10px;color:#3B6D11">Both decided</div>
     </div>
-    <div>
-      <div class="heading-block">
-        <div class="h1">Open<br>Challenges</div>
-        <div class="eyebrow" style="margin-top:8px">The Tavern Board</div>
-      </div>
-      <div class="rule"><span>&#9670;</span></div>
-      <div class="card">
-        <div class="card-top">
-          <div class="avatar">BW</div>
-          <div><span class="gold-amt">50</span><span class="gold-lbl">gold</span></div>
-        </div>
-        <div class="player-name">Brother Oswin</div>
-        <div class="card-meta">posted 4m ago &middot; timer: 30m</div>
-        <div class="btn">Challenge &rarr;</div>
-      </div>
-      <div class="label-demo">
-        <div class="label-demo-title">Two label font options &mdash; which feels right?</div>
-        <div style="margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#aaa;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">A — DM Mono labels (system contrast)</div>
-          <div class="stat-row">
-            <div class="stat"><div class="stat-val">&#x2B21; 1,240</div><div class="stat-key-mono">Gold</div></div>
-            <div class="divider"></div>
-            <div class="stat"><div class="stat-val">14</div><div class="stat-key-mono">Duels</div></div>
-            <div class="divider"></div>
-            <div class="stat"><div class="stat-val">320</div><div class="stat-key-mono">Honour</div></div>
-          </div>
-        </div>
-        <div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:#aaa;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">B — IM Fell italic labels (full immersion)</div>
-          <div class="stat-row">
-            <div class="stat"><div class="stat-val">&#x2B21; 1,240</div><div class="stat-key-fell">Gold</div></div>
-            <div class="divider"></div>
-            <div class="stat"><div class="stat-val">14</div><div class="stat-key-fell">Duels</div></div>
-            <div class="divider"></div>
-            <div class="stat"><div class="stat-val">320</div><div class="stat-key-fell">Honour</div></div>
-          </div>
-        </div>
-      </div>
+    <div class="timer-bar-wrap"><div class="timer-bar"></div></div>
+    <div class="chat-area">
+      <div class="bubble them">I have always kept my word. The gold means little to me compared to my honour.</div>
+      <div class="bubble me">Then we are of one mind. Let the pact hold.</div>
+      <div class="sys">&mdash; a raven was sent &mdash;</div>
+      <div class="bubble them">My seal is placed. I await yours.</div>
+    </div>
+    <div class="duel-footer">
+      <button class="dec-btn pledge">Pledge</button>
+      <button class="dec-btn betray">Betray</button>
     </div>
   </div>
-</section>
+
+  <div class="note">&#9670; &nbsp; pen-drawn raven replaces nudge button &nbsp; &#9670;</div>
+</div>
+
+<!-- RESULT -->
+<div class="section">
+  <div class="eyebrow">The Result</div>
+  <div class="h1">The Pact is Sealed</div>
+  <div class="orn"><span>&#9670;</span></div>
+
+  <div class="result-wrap">
+    <div class="result-line"></div>
+    <div class="result-emoji-sub">&#9876;</div>
+    <div class="result-title">Both Pledged</div>
+    <div class="result-sub">Honour prevailed. Each party gains 25% from the Hoard.</div>
+    <div class="m" style="font-size:1.4rem;font-weight:700;margin:16px 0;color:#3B6D11">+62 gold</div>
+    <div class="result-btns">
+      <button class="rbtn">Copy result</button>
+      <button class="rbtn">Share on ⨯</button>
+      <button class="rbtn">&larr; Tavern</button>
+    </div>
+  </div>
+  <div class="note">&#9670; &nbsp; &#9876; replaced by pen-drawn clasped gauntlets illustration &nbsp; &#9670;</div>
+</div>
 
 </body>
 </html>
