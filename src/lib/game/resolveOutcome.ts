@@ -5,6 +5,19 @@ type DBClient = SupabaseClient<Database>
 
 type Outcome = 'both_pledge' | 'both_betray' | 'p1_betray' | 'p2_betray' | 'p1_silent' | 'p2_silent' | 'both_silent'
 
+const HOARD_ANNOUNCEMENTS = [
+  'A merchant caravan paid tribute at the city gates. The Hoard is replenished.',
+  'The autumn harvest tithe has arrived from the southern villages. The coffers fill.',
+  'A wayward knight settled his gambling debts to the crown. The realm is enriched.',
+  'The monastery sent its winter donation. The Commons gives thanks.',
+  'Taxes levied upon the wool traders have reached the treasury. Spend wisely.',
+  'A noble house paid its toll upon the King\u2019s Road. Gold flows into the Hoard.',
+  'The guild masters convened and offered tribute. The Hoard is renewed.',
+  'Spoils from a southern expedition have been delivered to the vault.',
+  'The river merchants surrendered their river tax. The Hoard grows fat.',
+  'A bounty of seized contraband was sold at auction. The treasury prospers.',
+]
+
 export async function resolveOutcome(duelId: string, admin: DBClient) {
   const { data: duel } = await admin
     .from('duels')
@@ -42,7 +55,6 @@ export async function resolveOutcome(duelId: string, admin: DBClient) {
   } else if (d2 === 'betray') {
     outcome = 'p2_betray'
   } else {
-    // Default: treat undecided as betray if the other decided
     if (d1 && !d2) outcome = 'p1_betray'
     else if (d2 && !d1) outcome = 'p2_betray'
     else outcome = 'both_betray'
@@ -59,7 +71,6 @@ export async function resolveOutcome(duelId: string, admin: DBClient) {
 
   switch (outcome) {
     case 'both_pledge': {
-      // Both keep stake, both get 25% bonus from hoard
       const bonus = Math.floor(stake * 0.25)
       const canBonus = hoardBalance >= stake * 0.5
       p1Delta = canBonus ? bonus : 0
@@ -68,38 +79,32 @@ export async function resolveOutcome(duelId: string, admin: DBClient) {
       break
     }
     case 'both_betray': {
-      // Both lose stake to hoard
       p1Delta = -stake
       p2Delta = -stake
       hoardDelta = stake * 2
       break
     }
     case 'p1_betray': {
-      // p1 (betrayer) gets full pot
       p1Delta = stake
       p2Delta = -stake
       break
     }
     case 'p2_betray': {
-      // p2 (betrayer) gets full pot
       p1Delta = -stake
       p2Delta = stake
       break
     }
     case 'p1_silent': {
-      // p1 silent loses, p2 gets full pot
       p1Delta = -stake
       p2Delta = stake
       break
     }
     case 'p2_silent': {
-      // p2 silent loses, p1 gets full pot
       p1Delta = stake
       p2Delta = -stake
       break
     }
     case 'both_silent': {
-      // Both lose, hoard gets both
       p1Delta = -stake
       p2Delta = -stake
       hoardDelta = stake * 2
@@ -114,11 +119,16 @@ export async function resolveOutcome(duelId: string, admin: DBClient) {
   await admin.from('users').update({ gold_balance: (p1User?.gold_balance ?? 0) + p1Delta }).eq('id', p1)
   await admin.from('users').update({ gold_balance: (p2User?.gold_balance ?? 0) + p2Delta }).eq('id', p2)
 
-  // Update hoard
+  // Update hoard — insert announcement if refilled
   if (hoardDelta !== 0 && hoard) {
     let newBalance = hoardBalance + hoardDelta
-    if (newBalance < 100) newBalance += 200 // refill
+    const wasRefilled = newBalance < 100
+    if (wasRefilled) newBalance += 200
     await admin.from('hoard').update({ balance: newBalance }).eq('id', hoard.id)
+    if (wasRefilled) {
+      const message = HOARD_ANNOUNCEMENTS[Math.floor(Math.random() * HOARD_ANNOUNCEMENTS.length)]
+      await admin.from('hoard_announcements').insert({ message, gold_added: 200 })
+    }
   }
 
   // Apply bans for silent players
@@ -133,6 +143,5 @@ export async function resolveOutcome(duelId: string, admin: DBClient) {
 
   // Mark duel complete
   await admin.from('duels').update({ status: 'completed', outcome }).eq('id', duelId)
-  // Mark wager complete
   await admin.from('wagers').update({ status: 'completed' }).eq('id', duel.wager_id)
 }

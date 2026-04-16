@@ -32,7 +32,14 @@ function DuelRow({ duel, userId }: { duel: any; userId: string }) {
   )
 }
 
-export default function ProfileClient({ profile, duels }: { profile: UserRow; duels: any[] }) {
+interface Props {
+  profile: UserRow
+  duels: any[]
+  totalDuels: number
+  completedDuels: number
+}
+
+export default function ProfileClient({ profile, duels, totalDuels, completedDuels }: Props) {
   const [tab, setTab] = useState<'duels' | 'share'>('duels')
   const router = useRouter()
   const supabase = createClient()
@@ -44,6 +51,7 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
   }
 
   const shareText = `I have ${profile.gold_balance} Gold and an honour score of ${profile.honor_score} on PACT. Come challenge me.`
+  const isNewbie = profile.newbie_day <= 7
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
@@ -61,6 +69,16 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
           </div>
           <button onClick={handleSignOut} className="font-mono text-[11px] text-[#888] hover:text-[#111] border border-[#d8d4cc] rounded-full px-3 py-1">Sign out</button>
         </div>
+
+        {/* Newbie badge */}
+        {isNewbie && (
+          <div className="mt-3 inline-flex items-center gap-2 bg-[#f5f3ee] border border-[#d8d4cc] rounded-full px-3 py-1">
+            <span className="font-mono text-[10px] text-[#888]">
+              New Player · Day {profile.newbie_day} of 7 · ⬡ 50 gold/day · max 20 gold per duel
+            </span>
+          </div>
+        )}
+
         <div className="mt-5 flex gap-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-1">Gold</p>
@@ -72,7 +90,21 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
             <p className="font-serif text-3xl font-bold">{profile.honor_score}</p>
           </div>
         </div>
+
+        {/* Stats row */}
+        <div className="mt-4 pt-4 border-t border-[#f0ede6] flex gap-6">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-0.5">Total Duels</p>
+            <p className="font-serif text-xl font-bold">{totalDuels}</p>
+          </div>
+          <div className="w-px bg-[#f0ede6]" />
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-0.5">Completed</p>
+            <p className="font-serif text-xl font-bold">{completedDuels}</p>
+          </div>
+        </div>
       </div>
+
       <div className="flex gap-2 mb-4">
         {(['duels', 'share'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
