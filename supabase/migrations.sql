@@ -28,3 +28,20 @@ create policy "Requester can cancel own request" on public.alms_requests for upd
 
 -- 3. Publish wagers to realtime
 alter publication supabase_realtime add table public.wagers;
+
+-- 4. Create hoard_announcements table
+create table if not exists public.hoard_announcements (
+  id uuid primary key default uuid_generate_v4(),
+  message text not null,
+  gold_added integer not null default 200,
+  created_at timestamptz not null default now()
+);
+
+alter table public.hoard_announcements enable row level security;
+create policy "Anyone can read hoard announcements" on public.hoard_announcements
+  for select using (true);
+-- Inserts are performed by service role only (no auth.uid() policy needed)
+
+-- 5. Add last_daily_gold_at to users (tracks when newbie last received daily grant)
+alter table public.users
+  add column if not exists last_daily_gold_at date;

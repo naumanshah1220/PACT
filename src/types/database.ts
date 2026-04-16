@@ -14,6 +14,7 @@ export interface Database {
           banned_until: string | null
           newbie_day: number
           player_number: number | null
+          last_daily_gold_at: string | null
           created_at: string
         }
         Insert: {
@@ -26,6 +27,7 @@ export interface Database {
           banned_until?: string | null
           newbie_day?: number
           player_number?: number | null
+          last_daily_gold_at?: string | null
           created_at?: string
         }
         Update: {
@@ -38,6 +40,7 @@ export interface Database {
           banned_until?: string | null
           newbie_day?: number
           player_number?: number | null
+          last_daily_gold_at?: string | null
           created_at?: string
         }
       }
@@ -92,6 +95,11 @@ export interface Database {
         Insert: { id?: string; balance?: number }
         Update: { id?: string; balance?: number }
       }
+      hoard_announcements: {
+        Row: { id: string; message: string; gold_added: number; created_at: string }
+        Insert: { id?: string; message: string; gold_added?: number; created_at?: string }
+        Update: { id?: string; message?: string; gold_added?: number; created_at?: string }
+      }
     }
     Views: { [_ in never]: never }
     Functions: { [_ in never]: never }
@@ -107,6 +115,7 @@ export type MessageRow = Database['public']['Tables']['messages']['Row']
 export type AlmsDonationRow = Database['public']['Tables']['alms_donations']['Row']
 export type AlmsRequestRow = Database['public']['Tables']['alms_requests']['Row']
 export type HoardRow = Database['public']['Tables']['hoard']['Row']
+export type HoardAnnouncementRow = Database['public']['Tables']['hoard_announcements']['Row']
 
 export type WagerWithUser = WagerRow & { users: UserRow }
 export type DuelWithUsers = DuelRow & { wagers: WagerRow; player1: UserRow; player2: UserRow }
