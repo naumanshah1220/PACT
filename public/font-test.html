@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PACT — Font Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Germania+One&family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Uncial+Antiqua&family=Almendra:ital,wght@0,400;0,700;1,400&family=Cardo:ital,wght@0,400;1,400&family=IM+Fell+English:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #eae8e1;
+    color: #111;
+    font-family: 'DM Sans', sans-serif;
+    padding: 40px 24px;
+  }
+  .page-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 40px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #d8d4cc;
+    border-radius: 12px;
+    padding: 28px 24px;
+  }
+  .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #bbb;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0ede6;
+  }
+  .wordmark {
+    font-size: 2.4rem;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .tagline {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f0ede6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tagline::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1.5px;
+    background: #111;
+    flex-shrink: 0;
+  }
+  .h1 {
+    font-size: 1.8rem;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 20px;
+  }
+  .body-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    padding-top: 16px;
+    border-top: 1px solid #f0ede6;
+  }
+  .gold { color: #d97706; font-size: 14px; }
+  .gold-num { font-size: 1.4rem; font-weight: 700; color: #111; }
+
+  /* Per-font overrides */
+  .f-germania .wordmark, .f-germania .h1 { font-family: 'Germania One', serif; }
+  .f-cinzel .wordmark, .f-cinzel .h1 { font-family: 'Cinzel', serif; font-weight: 700; }
+  .f-medieval .wordmark, .f-medieval .h1 { font-family: 'MedievalSharp', serif; }
+  .f-uncial .wordmark, .f-uncial .h1 { font-family: 'Uncial Antiqua', serif; }
+  .f-almendra .wordmark, .f-almendra .h1 { font-family: 'Almendra', serif; font-weight: 700; }
+  .f-almendra .body-text { font-family: 'Almendra', serif; }
+  .f-cardo .wordmark { font-family: 'Cardo', serif; font-style: italic; }
+  .f-cardo .h1 { font-family: 'Cardo', serif; font-style: italic; }
+  .f-cardo .body-text { font-family: 'Cardo', serif; font-style: italic; }
+  .f-im-fell .wordmark, .f-im-fell .h1 { font-family: 'IM Fell English', serif; }
+  .f-im-fell .body-text { font-family: 'IM Fell English', serif; }
+
+  /* Body font variants */
+  .body-im-fell { font-family: 'IM Fell English', serif !important; }
+  .body-cardo { font-family: 'Cardo', serif !important; font-style: italic; }
+
+  /* Note cards */
+  .note {
+    background: #f5f3ee;
+    border: 1px dashed #d8d4cc;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    line-height: 1.7;
+  }
+  .note strong { color: #555; }
+</style>
+</head>
+<body>
+
+<p class="page-title">PACT — Font Comparison &nbsp;/&nbsp; Pick one, point at it</p>
+
+<div class="grid">
+
+  <!-- 1. Germania One -->
+  <div class="card f-germania">
+    <div class="label">01 &mdash; Germania One (heading) + DM Sans (body)</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- 2. Germania One + IM Fell body -->
+  <div class="card f-germania">
+    <div class="label">02 &mdash; Germania One (heading) + IM Fell English (body)</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text body-im-fell">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- 3. Cinzel -->
+  <div class="card f-cinzel">
+    <div class="label">03 &mdash; Cinzel (heading) + DM Sans (body) &mdash; GoT title cards</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- 4. Cinzel + IM Fell body -->
+  <div class="card f-cinzel">
+    <div class="label">04 &mdash; Cinzel (heading) + IM Fell English (body)</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text body-im-fell">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- 5. Uncial Antiqua -->
+  <div class="card f-uncial">
+    <div class="label">05 &mdash; Uncial Antiqua (heading) + DM Sans (body)</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- 6. Almendra -->
+  <div class="card f-almendra">
+    <div class="label">06 &mdash; Almendra (heading + body) &mdash; softer medieval</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- 7. Cardo italic — closest to Reigns -->
+  <div class="card f-cardo">
+    <div class="label">07 &mdash; Cardo italic (all) &mdash; closest free equiv to Reigns</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- 8. IM Fell English all -->
+  <div class="card f-im-fell">
+    <div class="label">08 &mdash; IM Fell English (everything) &mdash; pure manuscript</div>
+    <div class="wordmark">PACT</div>
+    <div class="tagline">A Game of Trust</div>
+    <div class="h1">House of Nobles</div>
+    <div class="subtitle">Ranked by Gold</div>
+    <p class="body-text">A merchant caravan paid tribute at the city gates. The Hoard is replenished. Your wager stands. Choose wisely.</p>
+    <div class="stat-row">
+      <span class="gold">&#x2B21;</span>
+      <span class="gold-num">1,240</span>
+      <span>Gold &nbsp;&middot;&nbsp; 14 duels &nbsp;&middot;&nbsp; #1042</span>
+    </div>
+  </div>
+
+  <!-- Note card -->
+  <div class="note">
+    <strong>Fonts not on Google Fonts (paid/self-hosted):</strong><br><br>
+    &bull; First Reign / Fourth Reign — commercial license required<br>
+    &bull; RELIGATH — commercial license required<br>
+    &bull; Graen Metal — commercial license required<br>
+    &bull; OCR A Extended — included in Windows/Mac but not Google Fonts<br><br>
+    If you pick one of these I can add instructions for self-hosting. Purchase from MyFonts or the designer’s site, then drop the .woff2 file in /public/fonts/.
+  </div>
+
+</div>
+
+</body>
+</html>
