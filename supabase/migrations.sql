@@ -17,10 +17,8 @@ create table if not exists public.alms_requests (
   fulfilled_by uuid references public.users(id),
   created_at timestamptz not null default now()
 );
-
 create index if not exists idx_alms_requests_status on public.alms_requests(status);
 create index if not exists idx_alms_requests_requester on public.alms_requests(requester_id);
-
 alter table public.alms_requests enable row level security;
 create policy "Anyone can read open alms requests" on public.alms_requests for select using (true);
 create policy "Authenticated can post alms request" on public.alms_requests for insert with check (auth.uid() = requester_id);
@@ -36,12 +34,13 @@ create table if not exists public.hoard_announcements (
   gold_added integer not null default 200,
   created_at timestamptz not null default now()
 );
-
 alter table public.hoard_announcements enable row level security;
-create policy "Anyone can read hoard announcements" on public.hoard_announcements
-  for select using (true);
--- Inserts are performed by service role only (no auth.uid() policy needed)
+create policy "Anyone can read hoard announcements" on public.hoard_announcements for select using (true);
 
--- 5. Add last_daily_gold_at to users (tracks when newbie last received daily grant)
+-- 5. Add last_daily_gold_at to users
 alter table public.users
   add column if not exists last_daily_gold_at date;
+
+-- 6. Add honorific to users (Sir / Lady / null)
+alter table public.users
+  add column if not exists honorific text check (honorific in ('Sir','Lady'));

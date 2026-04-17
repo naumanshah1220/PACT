@@ -15,6 +15,7 @@ export interface Database {
           newbie_day: number
           player_number: number | null
           last_daily_gold_at: string | null
+          honorific: 'Sir' | 'Lady' | null
           created_at: string
         }
         Insert: {
@@ -28,6 +29,7 @@ export interface Database {
           newbie_day?: number
           player_number?: number | null
           last_daily_gold_at?: string | null
+          honorific?: 'Sir' | 'Lady' | null
           created_at?: string
         }
         Update: {
@@ -41,6 +43,7 @@ export interface Database {
           newbie_day?: number
           player_number?: number | null
           last_daily_gold_at?: string | null
+          honorific?: 'Sir' | 'Lady' | null
           created_at?: string
         }
       }
