@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { BOT_CONFIG, getBotDecision, isBotId } from '@/lib/bots'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -8,7 +10,6 @@ export async function POST(req: Request) {
 
   const { wagerId } = await req.json()
 
-  // Lock: fetch and validate wager
   const { data: wager } = await supabase
     .from('wagers').select('*').eq('id', wagerId).single()
   if (!wager) return NextResponse.json({ error: 'Wager not found' }, { status: 404 })
@@ -17,26 +18,25 @@ export async function POST(req: Request) {
 
   // Block if challenger is already in an active duel
   const { data: activeDuels } = await supabase
-    .from('duels')
-    .select('id')
-    .eq('status', 'active')
-    .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`)
-    .limit(1)
+    .from('duels').select('id').eq('status', 'active')
+    .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`).limit(1)
   if (activeDuels && activeDuels.length > 0)
     return NextResponse.json({ error: 'Finish your current duel before starting another' }, { status: 400 })
 
-  // Check challenger balance
+  // Check challenger balance (skip for practice wagers)
   const { data: challenger } = await supabase.from('users').select('*').eq('id', user.id).single()
   if (!challenger) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-  if (challenger.gold_balance < wager.gold_amount)
+  if (!wager.practice && challenger.gold_balance < wager.gold_amount)
     return NextResponse.json({ error: 'Insufficient gold' }, { status: 400 })
 
+  const admin = createAdminClient()
+
   // Mark wager active
-  await supabase.from('wagers').update({ status: 'active' }).eq('id', wagerId)
+  await admin.from('wagers').update({ status: 'active' }).eq('id', wagerId)
 
   // Create duel
   const deadline = new Date(Date.now() + wager.timer_minutes * 60 * 1000).toISOString()
-  const { data: duel, error } = await supabase.from('duels').insert({
+  const { data: duel, error } = await admin.from('duels').insert({
     wager_id: wagerId,
     player1_id: wager.poster_id,
     player2_id: user.id,
@@ -44,6 +44,22 @@ export async function POST(req: Request) {
     status: 'active',
   }).select().single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error || !duel) return NextResponse.json({ error: error?.message ?? 'Failed to create duel' }, { status: 500 })
+
+  // Bot auto-play: if poster is a bot, immediately send greeting + set decision
+  if (isBotId(wager.poster_id)) {
+    const cfg = BOT_CONFIG[wager.poster_id]
+    const decision = getBotDecision(cfg.strategy)
+    await admin.from('messages').insert({
+      duel_id: duel.id,
+      sender_id: wager.poster_id,
+      content: cfg.greeting,
+    })
+    await admin.from('duels').update({
+      player1_messaged: true,
+      player1_decision: decision,
+    }).eq('id', duel.id)
+  }
+
   return NextResponse.json({ duelId: duel.id })
 }
