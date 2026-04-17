@@ -55,6 +55,29 @@ const OUTCOME_CONFIG: Record<Outcome, {
   },
 }
 
+function getGoldDelta(outcome: Outcome, isP1: boolean, stake: number): number {
+  switch (outcome) {
+    case 'both_pledge': return Math.floor(stake * 0.25)
+    case 'both_betray': return -stake
+    case 'both_silent': return -stake
+    case 'p1_betray': return isP1 ? stake : -stake
+    case 'p2_betray': return isP1 ? -stake : stake
+    case 'p1_silent': return isP1 ? -stake : stake
+    case 'p2_silent': return isP1 ? stake : -stake
+  }
+}
+
+function CoinIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#c9973a" />
+      <circle cx="12" cy="12" r="7.5" fill="#b07d2a" />
+      <circle cx="12" cy="12" r="5" fill="#c9973a" />
+      <ellipse cx="9.5" cy="9.5" rx="2" ry="1" fill="#f5e070" opacity="0.45" transform="rotate(-30 9.5 9.5)" />
+    </svg>
+  )
+}
+
 export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUsers; currentUserId: string }) {
   const isP1 = currentUserId === duel.player1_id
   const outcome = duel.outcome as Outcome | null
@@ -69,6 +92,7 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
 
   const config = OUTCOME_CONFIG[outcome]
   const stake = duel.wagers.gold_amount
+  const goldDelta = getGoldDelta(outcome, isP1, stake)
   const subtitle = config.subtitleFn(isP1, stake)
 
   const shareText = `I played PACT and ${outcome === 'both_pledge' ? 'we both pledged 🤝' : outcome.includes('betray') ? 'there was betrayal 😮' : 'silence fell 🔇'} — ${stake} Gold at stake. Play at pact.game`
@@ -80,25 +104,31 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
   return (
     <main className="max-w-2xl mx-auto px-4 py-16">
       <div className="flex items-center gap-6 mb-10 animate-slide-in-left">
-        {/* Vertical gray line */}
         <div className="w-px h-20 bg-[#d8d4cc] shrink-0" />
-        {/* Emoji */}
         <span className="text-6xl leading-none">{config.emoji}</span>
       </div>
 
-      <h1 className="font-serif text-[28px] font-bold mb-3">{config.title}</h1>
+      <h1 className="font-fell text-[28px] mb-5">{config.title}</h1>
+
+      <div className="flex items-center gap-2.5 mb-3">
+        <CoinIcon />
+        <span className="font-fell text-3xl text-[#1a1208]">
+          {goldDelta > 0 ? `+${goldDelta}` : `${goldDelta}`}
+        </span>
+      </div>
+
       <p className="font-mono text-sm text-[#555] mb-10">{subtitle}</p>
 
       <div className="flex flex-col gap-3">
         <Link
           href="/"
-          className="inline-block border border-[#d8d4cc] rounded-xl px-6 py-3 font-sans text-sm font-medium text-center hover:bg-[#f0ede6] transition-colors"
+          className="inline-block border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
         >
           Back to Tavern
         </Link>
         <button
           onClick={shareOnX}
-          className="border border-[#d8d4cc] rounded-xl px-6 py-3 font-sans text-sm font-medium text-center hover:bg-[#f0ede6] transition-colors"
+          className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
         >
           Share on ⨯
         </button>
