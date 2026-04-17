@@ -14,6 +14,9 @@ export interface Database {
           banned_until: string | null
           newbie_day: number
           player_number: number | null
+          last_daily_gold_at: string | null
+          honorific: 'Sir' | 'Lady' | null
+          is_bot: boolean
           created_at: string
         }
         Insert: {
@@ -26,6 +29,9 @@ export interface Database {
           banned_until?: string | null
           newbie_day?: number
           player_number?: number | null
+          last_daily_gold_at?: string | null
+          honorific?: 'Sir' | 'Lady' | null
+          is_bot?: boolean
           created_at?: string
         }
         Update: {
@@ -38,6 +44,9 @@ export interface Database {
           banned_until?: string | null
           newbie_day?: number
           player_number?: number | null
+          last_daily_gold_at?: string | null
+          honorific?: 'Sir' | 'Lady' | null
+          is_bot?: boolean
           created_at?: string
         }
       }
@@ -48,6 +57,8 @@ export interface Database {
           gold_amount: number
           timer_minutes: number
           status: 'open' | 'active' | 'completed' | 'cancelled'
+          spectators_allowed: boolean
+          practice: boolean
           created_at: string
         }
         Insert: {
@@ -56,6 +67,8 @@ export interface Database {
           gold_amount: number
           timer_minutes: number
           status?: 'open' | 'active' | 'completed' | 'cancelled'
+          spectators_allowed?: boolean
+          practice?: boolean
           created_at?: string
         }
         Update: {
@@ -64,6 +77,8 @@ export interface Database {
           gold_amount?: number
           timer_minutes?: number
           status?: 'open' | 'active' | 'completed' | 'cancelled'
+          spectators_allowed?: boolean
+          practice?: boolean
           created_at?: string
         }
       }
@@ -190,17 +205,31 @@ export interface Database {
         }
       }
       hoard: {
+        Row: { id: string; balance: number }
+        Insert: { id?: string; balance?: number }
+        Update: { id?: string; balance?: number }
+      }
+      hoard_announcements: {
         Row: {
           id: string
-          balance: number
+          message: string
+          gold_added: number
+          dismissed: boolean
+          created_at: string
         }
         Insert: {
           id?: string
-          balance?: number
+          message: string
+          gold_added?: number
+          dismissed?: boolean
+          created_at?: string
         }
         Update: {
           id?: string
-          balance?: number
+          message?: string
+          gold_added?: number
+          dismissed?: boolean
+          created_at?: string
         }
       }
     }
@@ -219,6 +248,7 @@ export type MessageRow = Database['public']['Tables']['messages']['Row']
 export type AlmsDonationRow = Database['public']['Tables']['alms_donations']['Row']
 export type AlmsRequestRow = Database['public']['Tables']['alms_requests']['Row']
 export type HoardRow = Database['public']['Tables']['hoard']['Row']
+export type HoardAnnouncementRow = Database['public']['Tables']['hoard_announcements']['Row']
 
 export type WagerWithUser = WagerRow & { users: UserRow }
 export type DuelWithUsers = DuelRow & {
@@ -230,4 +260,15 @@ export type MessageWithUser = MessageRow & { users: UserRow }
 export type AlmsRequestWithUser = AlmsRequestRow & {
   requester: UserRow
   fulfiller: UserRow | null
+}
+
+export type SpectatableDuel = {
+  duelId: string
+  wagerId: string
+  goldAmount: number
+  spectators_allowed: boolean
+  practice: boolean
+  poster: { username: string; display_initials: string }
+  p1: { username: string; display_initials: string }
+  p2: { username: string; display_initials: string }
 }

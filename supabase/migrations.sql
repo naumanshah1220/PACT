@@ -1,11 +1,10 @@
 -- Run this in Supabase SQL Editor to upgrade an existing database
--- These are additive changes safe to run on a live DB
+-- All sections are additive and safe to run on a live DB
 
 -- 1. Add player_number to users
 create sequence if not exists player_number_seq start 1001;
 alter table public.users
   add column if not exists player_number integer unique default nextval('player_number_seq');
--- Backfill existing users that have no player_number
 update public.users set player_number = nextval('player_number_seq') where player_number is null;
 
 -- 2. Create alms_requests table
@@ -18,19 +17,60 @@ create table if not exists public.alms_requests (
   fulfilled_by uuid references public.users(id),
   created_at timestamptz not null default now()
 );
-
 create index if not exists idx_alms_requests_status on public.alms_requests(status);
 create index if not exists idx_alms_requests_requester on public.alms_requests(requester_id);
 
 -- 3. RLS for alms_requests
 alter table public.alms_requests enable row level security;
-
-create policy "Anyone can read open alms requests"
+create policy if not exists "Anyone can read open alms requests"
   on public.alms_requests for select using (true);
-create policy "Authenticated can post alms request"
+create policy if not exists "Authenticated can post alms request"
   on public.alms_requests for insert with check (auth.uid() = requester_id);
-create policy "Requester can cancel own request"
+create policy if not exists "Requester can cancel own request"
   on public.alms_requests for update using (auth.uid() = requester_id);
 
--- 4. Publish wagers to realtime (for live tavern)
+-- 4. Publish wagers to realtime
 alter publication supabase_realtime add table public.wagers;
+
+-- 5. hoard_announcements table
+create table if not exists public.hoard_announcements (
+  id uuid primary key default uuid_generate_v4(),
+  message text not null,
+  gold_added integer not null default 200,
+  dismissed boolean default false,
+  created_at timestamptz not null default now()
+);
+alter table public.hoard_announcements enable row level security;
+create policy if not exists "Anyone can read hoard announcements"
+  on public.hoard_announcements for select using (true);
+
+-- 6. Add last_daily_gold_at to users
+alter table public.users add column if not exists last_daily_gold_at date;
+
+-- 7. Add honorific to users
+alter table public.users add column if not exists honorific text check (honorific in ('Sir', 'Lady'));
+
+-- 8. Add spectators_allowed and practice to wagers
+alter table public.wagers add column if not exists spectators_allowed boolean default false;
+alter table public.wagers add column if not exists practice boolean default false;
+
+-- 9. Add is_bot to users
+alter table public.users add column if not exists is_bot boolean default false;
+
+-- 10. Create bot court characters
+-- Insert bot entries into auth (passwords are non-functional placeholders)
+insert into auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, aud, role)
+values
+  ('00000000-0000-0000-0001-000000000000', 'bot-friar@pact.internal',    crypt('pact-bot-no-login', gen_salt('bf')), now(), now(), now(), 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0002-000000000000', 'bot-cutpurse@pact.internal', crypt('pact-bot-no-login', gen_salt('bf')), now(), now(), now(), 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0003-000000000000', 'bot-merchant@pact.internal', crypt('pact-bot-no-login', gen_salt('bf')), now(), now(), now(), 'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0004-000000000000', 'bot-oracle@pact.internal',   crypt('pact-bot-no-login', gen_salt('bf')), now(), now(), now(), 'authenticated', 'authenticated')
+on conflict (id) do nothing;
+
+insert into public.users (id, username, display_initials, gold_balance, honor_score, is_bot)
+values
+  ('00000000-0000-0000-0001-000000000000', 'TheMercifulFriar', 'MF', 9999, 100, true),
+  ('00000000-0000-0000-0002-000000000000', 'TheCutpurse',      'CP', 9999,   0, true),
+  ('00000000-0000-0000-0003-000000000000', 'TheMerchant',      'TM', 9999,  50, true),
+  ('00000000-0000-0000-0004-000000000000', 'TheOracle',        'TO', 9999,  25, true)
+on conflict (id) do nothing;
