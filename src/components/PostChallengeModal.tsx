@@ -27,6 +27,7 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
 
   const [gold, setGold] = useState(Math.min(5, maxWager))
   const [timerIdx, setTimerIdx] = useState(2)
+  const [spectatorsAllowed, setSpectatorsAllowed] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -37,7 +38,11 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
     const res = await fetch('/api/post-wager', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goldAmount: gold, timerMinutes: TIMER_OPTIONS[timerIdx].value }),
+      body: JSON.stringify({
+        goldAmount: gold,
+        timerMinutes: TIMER_OPTIONS[timerIdx].value,
+        spectatorsAllowed,
+      }),
     })
     const data = await res.json()
     if (data.error) { setError(data.error); setLoading(false); return }
@@ -47,44 +52,40 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white border border-[#d8d4cc] rounded-[12px] w-full max-w-sm p-6 animate-fade-up">
+      <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-serif text-xl">Post a Challenge</h2>
+          <h2 className="font-fell text-xl">Post a Challenge</h2>
           <button onClick={onClose} className="font-mono text-lg text-[#888] hover:text-[#111]">×</button>
         </div>
 
-        {/* Gold input */}
         <div className="mb-5">
           <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">
             Wager Amount
           </label>
           <div className="flex items-center gap-3">
             <input
-              type="range"
-              min={1} max={maxWager} value={gold}
+              type="range" min={1} max={maxWager} value={gold}
               onChange={e => setGold(Number(e.target.value))}
-              className="flex-1 accent-[#111]"
+              className="flex-1 accent-[#1a1208]"
             />
-            <span className="font-serif text-2xl font-bold w-12 text-right">{gold}</span>
+            <span className="font-fell text-2xl w-12 text-right">{gold}</span>
           </div>
           <p className="font-mono text-[10px] text-[#888] mt-1">
             Balance: {currentUser.gold_balance} &middot; Max: {maxWager}
           </p>
         </div>
 
-        {/* Timer picker */}
-        <div className="mb-6">
+        <div className="mb-5">
           <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">
             Chat Timer
           </label>
           <div className="grid grid-cols-4 gap-1.5">
             {TIMER_OPTIONS.map((t, i) => (
               <button
-                key={t.value}
-                onClick={() => setTimerIdx(i)}
+                key={t.value} onClick={() => setTimerIdx(i)}
                 className={`font-mono text-xs py-1.5 rounded-lg border transition-colors ${
                   timerIdx === i
-                    ? 'bg-[#111] text-white border-[#111]'
+                    ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]'
                     : 'bg-white text-[#444] border-[#d8d4cc] hover:bg-[#f0ede6]'
                 }`}
               >
@@ -94,11 +95,29 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
           </div>
         </div>
 
+        <div className="mb-6">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => setSpectatorsAllowed(v => !v)}
+              className={`w-9 h-5 rounded-full border transition-colors ${
+                spectatorsAllowed ? 'bg-[#1a1208] border-[#1a1208]' : 'bg-white border-[#d8d4cc]'
+              }`}
+            >
+              <div className={`w-3.5 h-3.5 bg-white rounded-full mt-[3px] transition-all ${
+                spectatorsAllowed ? 'ml-[18px]' : 'ml-[3px]'
+              }`} />
+            </div>
+            <span className="font-mono text-[11px] text-[#888]">
+              Allow spectators to observe this duel
+            </span>
+          </label>
+        </div>
+
         {error && <p className="font-mono text-xs text-[#993C1D] mb-3">{error}</p>}
 
         <button
           onClick={handlePost} disabled={loading}
-          className="w-full bg-[#111] text-white font-sans text-sm font-medium py-2.5 rounded-lg hover:bg-[#333] transition-colors disabled:opacity-50"
+          className="w-full bg-[#1a1208] text-[#EEEDE4] font-mono text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? 'Posting…' : `Post — ${gold} Gold at stake`}
         </button>

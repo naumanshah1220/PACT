@@ -2,18 +2,39 @@ import { createClient } from '@/lib/supabase/server'
 import TavernClient from './TavernClient'
 import PactHeader from '@/components/PactHeader'
 import BanBanner from '@/components/BanBanner'
+import type { SpectatableDuel } from '@/types/database'
 
 export const revalidate = 0
 
 export default async function TavernPage() {
   const supabase = await createClient()
 
+  // Open wagers (all visitors see these)
   const { data: wagers } = await supabase
     .from('wagers')
     .select('*, users(*)')
     .eq('status', 'open')
     .order('created_at', { ascending: false })
     .limit(60)
+
+  // Active spectatable duels
+  const { data: activeDuelRaw } = await supabase
+    .from('duels')
+    .select('id, wager_id, player1:users!duels_player1_id_fkey(username, display_initials), player2:users!duels_player2_id_fkey(username, display_initials), wagers!inner(id, gold_amount, spectators_allowed, practice, users(username, display_initials))')
+    .eq('status', 'active')
+    .eq('wagers.spectators_allowed', true)
+    .limit(10)
+
+  const spectatableDuels: SpectatableDuel[] = (activeDuelRaw ?? []).map((d: any) => ({
+    duelId: d.id,
+    wagerId: d.wager_id,
+    goldAmount: d.wagers.gold_amount,
+    spectators_allowed: d.wagers.spectators_allowed,
+    practice: d.wagers.practice,
+    poster: d.wagers.users,
+    p1: d.player1,
+    p2: d.player2,
+  }))
 
   const { data: { user: authUser } } = await supabase.auth.getUser()
   let currentUser = null
@@ -25,10 +46,7 @@ export default async function TavernPage() {
 
   if (authUser) {
     const { data: profile } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authUser.id)
-      .single()
+      .from('users').select('*').eq('id', authUser.id).single()
     currentUser = profile
 
     const { data: duelsRaw } = await supabase
@@ -40,8 +58,7 @@ export default async function TavernPage() {
     if (duelsRaw) {
       activeDuels = (duelsRaw as any[]).map(d => {
         const isP1 = d.player1_id === authUser.id
-        const opponent = isP1 ? d.player2 : d.player1
-        return { id: d.id, deadline: d.deadline, opponent }
+        return { id: d.id, deadline: d.deadline, opponent: isP1 ? d.player2 : d.player1 }
       })
     }
   }
@@ -57,6 +74,7 @@ export default async function TavernPage() {
         currentUser={currentUser}
         hoardBalance={hoard?.balance ?? 0}
         activeDuels={activeDuels}
+        spectatableDuels={spectatableDuels}
       />
     </>
   )
