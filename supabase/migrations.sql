@@ -20,7 +20,7 @@ create table if not exists public.alms_requests (
 create index if not exists idx_alms_requests_status on public.alms_requests(status);
 create index if not exists idx_alms_requests_requester on public.alms_requests(requester_id);
 
--- 3. RLS for alms_requests (idempotent via exception handling)
+-- 3. RLS for alms_requests
 alter table public.alms_requests enable row level security;
 do $$ begin
   create policy "Anyone can read open alms requests"
@@ -35,10 +35,18 @@ do $$ begin
     on public.alms_requests for update using (auth.uid() = requester_id);
 exception when duplicate_object then null; end $$;
 
--- 4. Publish wagers to realtime
-do $$ begin
-  alter publication supabase_realtime add table public.wagers;
-exception when others then null; end $$;
+-- 4. Publish wagers to realtime (check first to avoid duplicate error)
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'wagers'
+  ) then
+    alter publication supabase_realtime add table public.wagers;
+  end if;
+end $$;
 
 -- 5. hoard_announcements table
 create table if not exists public.hoard_announcements (
