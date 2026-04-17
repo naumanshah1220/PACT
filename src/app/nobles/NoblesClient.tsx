@@ -37,17 +37,25 @@ export default function NoblesClient({ initialNobles, currentUserId, initialOffs
         {nobles.map((n, i) => (
           <div
             key={n.id}
-            className={`flex items-center justify-between py-3 border-b border-[#f0ede6] px-1 ${
-              n.id === currentUserId ? 'bg-[#f5f3ee]' : ''
-            }`}
+            className="flex items-center justify-between py-3 border-b border-[#e0d8c8] px-1"
+            style={n.id === currentUserId ? { backgroundColor: 'rgba(176,125,42,0.08)' } : {}}
           >
             <div className="flex items-center gap-4">
-              <span className="font-mono text-[11px] text-[#bbb] w-6">{String(i + 1).padStart(2, '0')}</span>
-              <span className="font-sans text-sm font-medium">{n.username}</span>
+              <span className="font-mono text-[11px] text-[#ccc] w-6">{String(i + 1).padStart(2, '0')}</span>
+              {i < 3 ? (
+                <span className="gold-scroll text-sm font-medium">{n.username}</span>
+              ) : (
+                <span
+                  className="text-sm font-medium"
+                  style={n.id === currentUserId ? { color: '#1a1208', fontStyle: 'italic' } : {}}
+                >
+                  {n.username}{n.id === currentUserId && <span className="font-mono text-[10px] text-[#aaa] ml-2 not-italic">(you)</span>}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-amber-600 text-xs">⬡</span>
-              <span className="font-serif text-base font-bold">{n.gold_balance}</span>
+              <span className="text-amber-700 text-xs">⬡</span>
+              <span className="text-base font-bold">{n.gold_balance}</span>
             </div>
           </div>
         ))}
@@ -56,7 +64,7 @@ export default function NoblesClient({ initialNobles, currentUserId, initialOffs
         <button
           onClick={loadMore}
           disabled={loading}
-          className="mt-6 w-full font-mono text-[11px] text-[#888] hover:text-[#111] border border-[#d8d4cc] rounded-lg py-2 transition-colors disabled:opacity-50"
+          className="mt-6 w-full font-mono text-[11px] text-[#888] hover:text-[#1a1208] border border-[#D4CCBA] rounded-lg py-2 transition-colors disabled:opacity-50"
         >
           {loading ? 'Loading…' : 'Load more'}
         </button>

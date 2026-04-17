@@ -22,10 +22,7 @@ export default function PactHeader() {
       <div className="max-w-2xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex flex-col">
-            <span
-              className="gold-shimmer font-fell text-[2.2rem] leading-none"
-              style={{ fontStyle: 'normal' }}
-            >
+            <span className="font-fell text-[2.2rem] leading-none text-[#1a1208]" style={{ fontStyle: 'normal' }}>
               PACT
             </span>
             <div className="flex items-center gap-2 mt-1">

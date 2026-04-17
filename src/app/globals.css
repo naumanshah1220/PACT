@@ -6,10 +6,8 @@
 
 :root {
   --bg: #EEEDE4;
-  --pledge: #3B6D11;
-  --betray: #993C1D;
   --ink: #1a1208;
-  --gold: #b07d2a;
+  --gold-pos: 50% center;
 }
 
 body {
@@ -26,7 +24,6 @@ body::before {
   pointer-events: none;
   z-index: 9998;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
   background-size: 180px 180px;
   opacity: 0.055;
   mix-blend-mode: multiply;
@@ -42,18 +39,24 @@ body::after {
   background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(26,18,8,0.28) 100%);
 }
 
-/* Gold shimmer — wordmark only */
-@keyframes shimmer {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
-}
-.gold-shimmer {
-  background: linear-gradient(90deg, #8B6914 0%, #c9973a 35%, #e8c46a 50%, #c9973a 65%, #8B6914 100%);
-  background-size: 250% auto;
+/* Scroll-parallax gold — applied to top-3 names only */
+.gold-scroll {
+  background: linear-gradient(
+    105deg,
+    #2a1800 0%,
+    #7a5210 18%,
+    #c9973a 34%,
+    #f5e070 50%,
+    #c9973a 66%,
+    #7a5210 82%,
+    #2a1800 100%
+  );
+  background-size: 300% auto;
+  background-position: var(--gold-pos);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shimmer 5s linear infinite;
+  display: inline;
 }
 
 /* Scrollbar */
@@ -61,7 +64,7 @@ body::after {
 ::-webkit-scrollbar-track { background: #EEEDE4; }
 ::-webkit-scrollbar-thumb { background: #ccc5ae; border-radius: 2px; }
 
-/* Tavern auto-scroll */
+/* Tavern scroll */
 .tavern-scroll-container { overflow: hidden; position: relative; }
 .tavern-scroll-track { animation: scroll-up 40s linear infinite; }
 .tavern-scroll-track:hover { animation-play-state: paused; }
