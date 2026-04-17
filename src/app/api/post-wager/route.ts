@@ -6,13 +6,11 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { goldAmount, timerMinutes } = await req.json()
+  const { goldAmount, timerMinutes, spectatorsAllowed } = await req.json()
 
-  // Fetch user
   const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  // Newbie cap
   const maxWager = profile.newbie_day <= 3 ? 5 : profile.newbie_day <= 7 ? 10 : profile.gold_balance
   if (goldAmount > maxWager) return NextResponse.json({ error: `Max wager is ${maxWager}` }, { status: 400 })
   if (goldAmount > profile.gold_balance) return NextResponse.json({ error: 'Insufficient gold' }, { status: 400 })
@@ -23,6 +21,7 @@ export async function POST(req: Request) {
     gold_amount: goldAmount,
     timer_minutes: timerMinutes,
     status: 'open',
+    spectators_allowed: spectatorsAllowed ?? false,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

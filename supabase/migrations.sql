@@ -22,11 +22,14 @@ create index if not exists idx_alms_requests_requester on public.alms_requests(r
 
 -- 3. RLS for alms_requests
 alter table public.alms_requests enable row level security;
-create policy if not exists "Anyone can read open alms requests"
+drop policy if exists "Anyone can read open alms requests" on public.alms_requests;
+create policy "Anyone can read open alms requests"
   on public.alms_requests for select using (true);
-create policy if not exists "Authenticated can post alms request"
+drop policy if exists "Authenticated can post alms request" on public.alms_requests;
+create policy "Authenticated can post alms request"
   on public.alms_requests for insert with check (auth.uid() = requester_id);
-create policy if not exists "Requester can cancel own request"
+drop policy if exists "Requester can cancel own request" on public.alms_requests;
+create policy "Requester can cancel own request"
   on public.alms_requests for update using (auth.uid() = requester_id);
 
 -- 4. Publish wagers to realtime
@@ -41,7 +44,8 @@ create table if not exists public.hoard_announcements (
   created_at timestamptz not null default now()
 );
 alter table public.hoard_announcements enable row level security;
-create policy if not exists "Anyone can read hoard announcements"
+drop policy if exists "Anyone can read hoard announcements" on public.hoard_announcements;
+create policy "Anyone can read hoard announcements"
   on public.hoard_announcements for select using (true);
 
 -- 6. Add last_daily_gold_at to users
@@ -57,8 +61,7 @@ alter table public.wagers add column if not exists practice boolean default fals
 -- 9. Add is_bot to users
 alter table public.users add column if not exists is_bot boolean default false;
 
--- 10. Create bot court characters
--- Insert bot entries into auth (passwords are non-functional placeholders)
+-- 10. Create bot court characters in auth
 insert into auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, aud, role)
 values
   ('00000000-0000-0000-0001-000000000000', 'bot-friar@pact.internal',    crypt('pact-bot-no-login', gen_salt('bf')), now(), now(), now(), 'authenticated', 'authenticated'),
@@ -74,3 +77,32 @@ values
   ('00000000-0000-0000-0003-000000000000', 'TheMerchant',      'TM', 9999,  50, true),
   ('00000000-0000-0000-0004-000000000000', 'TheOracle',        'TO', 9999,  25, true)
 on conflict (id) do nothing;
+
+-- 11. Seed initial bot wagers (idempotent — only inserts if bot has no open wager)
+insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
+select '00000000-0000-0000-0001-000000000000', 10, 60, 'open', true, true
+where not exists (
+  select 1 from public.wagers
+  where poster_id = '00000000-0000-0000-0001-000000000000' and status = 'open'
+);
+
+insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
+select '00000000-0000-0000-0002-000000000000', 15, 60, 'open', true, true
+where not exists (
+  select 1 from public.wagers
+  where poster_id = '00000000-0000-0000-0002-000000000000' and status = 'open'
+);
+
+insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
+select '00000000-0000-0000-0003-000000000000', 20, 120, 'open', true, true
+where not exists (
+  select 1 from public.wagers
+  where poster_id = '00000000-0000-0000-0003-000000000000' and status = 'open'
+);
+
+insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
+select '00000000-0000-0000-0004-000000000000', 25, 60, 'open', true, true
+where not exists (
+  select 1 from public.wagers
+  where poster_id = '00000000-0000-0000-0004-000000000000' and status = 'open'
+);
