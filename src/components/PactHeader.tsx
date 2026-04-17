@@ -12,24 +12,25 @@ export default function PactHeader() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
       if (!authUser) return
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single()
+      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
       if (data) setUser(data)
     })
   }, [])
 
   return (
-    <header className="border-b border-[#cec4ae] bg-[#e6dfd0] sticky top-0 z-50">
+    <header className="border-b border-[#D4CCBA] sticky top-0 z-50" style={{ backgroundColor: '#EEEDE4' }}>
       <div className="max-w-2xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex flex-col">
-            <span className="font-fell text-[2.2rem] leading-none tracking-tight" style={{fontStyle:'normal'}}>PACT</span>
+            <span
+              className="gold-shimmer font-fell text-[2.2rem] leading-none"
+              style={{ fontStyle: 'normal' }}
+            >
+              PACT
+            </span>
             <div className="flex items-center gap-2 mt-1">
-              <div className="h-px w-6 bg-[#1a1208] opacity-40" />
-              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#888]">A Game of Trust</span>
+              <div className="h-px w-6 bg-[#1a1208] opacity-30" />
+              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#999]">A Game of Trust</span>
             </div>
           </Link>
 
@@ -38,15 +39,17 @@ export default function PactHeader() {
               <>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-1.5 bg-[#f0ead8] border border-[#cec4ae] rounded-full px-3 py-1.5 font-mono text-xs"
+                  className="flex items-center gap-1.5 border border-[#D4CCBA] rounded-full px-3 py-1.5 font-mono text-xs"
+                  style={{ backgroundColor: '#F5F3EA' }}
                 >
                   <span className="text-amber-700">⬡</span>
                   <span className="font-medium">{user.gold_balance}</span>
-                  <span className="text-[#888]">Gold</span>
+                  <span className="text-[#999]">Gold</span>
                 </Link>
                 <Link
                   href="/profile"
-                  className="w-8 h-8 rounded-full bg-[#e0d8c8] border border-[#cec4ae] flex items-center justify-center font-mono text-xs font-medium"
+                  className="w-8 h-8 rounded-full border border-[#D4CCBA] flex items-center justify-center font-mono text-xs font-medium"
+                  style={{ backgroundColor: '#E6E3D8' }}
                 >
                   {user.display_initials}
                 </Link>
@@ -54,7 +57,7 @@ export default function PactHeader() {
             ) : (
               <Link
                 href="/login"
-                className="font-mono text-xs border border-[#cec4ae] rounded-full px-3 py-1.5 hover:bg-[#f0ead8] transition-colors"
+                className="font-mono text-xs border border-[#D4CCBA] rounded-full px-3 py-1.5 transition-colors hover:bg-[#F5F3EA]"
               >
                 Sign in
               </Link>

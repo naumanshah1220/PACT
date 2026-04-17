@@ -5,29 +5,30 @@
 @tailwind utilities;
 
 :root {
-  --bg: #e6dfd0;
+  --bg: #EEEDE4;
   --pledge: #3B6D11;
   --betray: #993C1D;
   --ink: #1a1208;
+  --gold: #b07d2a;
 }
 
 body {
-  background-color: #e6dfd0;
+  background-color: #EEEDE4;
   font-family: 'IM Fell English', Georgia, serif;
   color: #1a1208;
 }
 
-/* Paper grain — fixed overlay, no pointer events */
+/* Paper grain */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 9998;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 180px 180px;
-  opacity: 0.04;
+  opacity: 0.055;
   mix-blend-mode: multiply;
 }
 
@@ -38,65 +39,62 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: 9997;
-  background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(26,18,8,0.22) 100%);
+  background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(26,18,8,0.28) 100%);
+}
+
+/* Gold shimmer — wordmark only */
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.gold-shimmer {
+  background: linear-gradient(90deg, #8B6914 0%, #c9973a 35%, #e8c46a 50%, #c9973a 65%, #8B6914 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 5s linear infinite;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #e6dfd0; }
-::-webkit-scrollbar-thumb { background: #c9b99a; border-radius: 2px; }
+::-webkit-scrollbar-track { background: #EEEDE4; }
+::-webkit-scrollbar-thumb { background: #ccc5ae; border-radius: 2px; }
 
 /* Tavern auto-scroll */
-.tavern-scroll-container {
-  overflow: hidden;
-  position: relative;
-}
-.tavern-scroll-track {
-  animation: scroll-up 40s linear infinite;
-}
-.tavern-scroll-track:hover {
-  animation-play-state: paused;
-}
+.tavern-scroll-container { overflow: hidden; position: relative; }
+.tavern-scroll-track { animation: scroll-up 40s linear infinite; }
+.tavern-scroll-track:hover { animation-play-state: paused; }
 @keyframes scroll-up {
-  0% { transform: translateY(0); }
+  0%   { transform: translateY(0); }
   100% { transform: translateY(-50%); }
 }
 
-/* Card entrance */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-up {
-  animation: fade-up 350ms ease forwards;
-}
+.animate-fade-up { animation: fade-up 350ms ease forwards; }
 
-/* Slide in from left */
 @keyframes slide-in-left {
   from { opacity: 0; transform: translateX(-24px); }
-  to { opacity: 1; transform: translateX(0); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-.animate-slide-in-left {
-  animation: slide-in-left 400ms ease forwards;
-}
+.animate-slide-in-left { animation: slide-in-left 400ms ease forwards; }
 
-/* Chat bubbles */
 @keyframes bubble-in-left {
   from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes bubble-in-right {
   from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-.bubble-in-left { animation: bubble-in-left 250ms ease forwards; }
+.bubble-in-left  { animation: bubble-in-left  250ms ease forwards; }
 .bubble-in-right { animation: bubble-in-right 250ms ease forwards; }
 
-/* Blinking cursor */
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  50%       { opacity: 0; }
 }
-.cursor-blink {
-  animation: blink 1s step-end infinite;
-}
+.cursor-blink { animation: blink 1s step-end infinite; }
