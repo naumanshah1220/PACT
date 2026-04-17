@@ -11,29 +11,27 @@ export default async function NoblesPage() {
 
   const { data: nobles } = await supabase
     .from('users')
-    .select('id, username, gold_balance, player_number')
+    .select('id, username, gold_balance, honorific')
     .order('gold_balance', { ascending: false })
-    .range(0, 19)
+    .limit(20)
 
   return (
     <>
       <PactHeader />
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="font-fell text-[2rem] leading-tight">House of Nobles</h1>
+          <h1 className="font-fell text-3xl">House of Nobles</h1>
           <p className="font-mono text-[11px] uppercase tracking-widest text-[#888] mt-1">
             Ranked by Gold
           </p>
         </div>
 
-        <NoblesClient
-          initialNobles={nobles ?? []}
-          currentUserId={user?.id ?? null}
-          initialOffset={nobles?.length ?? 0}
-        />
+        <NoblesClient initialNobles={nobles ?? []} currentUserId={user?.id ?? null} />
 
         <div className="mt-8">
-          <Link href="/" className="font-mono text-[11px] text-[#888] hover:text-[#111]">← Tavern</Link>
+          <Link href="/" className="font-mono text-[11px] text-[#888] hover:text-[#111]">
+            ← Tavern
+          </Link>
         </div>
       </main>
     </>

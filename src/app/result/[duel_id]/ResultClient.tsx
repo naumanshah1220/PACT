@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import type { DuelWithUsers } from '@/types/database'
 
@@ -56,8 +55,30 @@ const OUTCOME_CONFIG: Record<Outcome, {
   },
 }
 
+function getGoldDelta(outcome: Outcome, isP1: boolean, stake: number): number {
+  switch (outcome) {
+    case 'both_pledge': return Math.floor(stake * 0.25)
+    case 'both_betray': return -stake
+    case 'both_silent': return -stake
+    case 'p1_betray': return isP1 ? stake : -stake
+    case 'p2_betray': return isP1 ? -stake : stake
+    case 'p1_silent': return isP1 ? -stake : stake
+    case 'p2_silent': return isP1 ? stake : -stake
+  }
+}
+
+function CoinIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#c9973a" />
+      <circle cx="12" cy="12" r="7.5" fill="#b07d2a" />
+      <circle cx="12" cy="12" r="5" fill="#c9973a" />
+      <ellipse cx="9.5" cy="9.5" rx="2" ry="1" fill="#f5e070" opacity="0.45" transform="rotate(-30 9.5 9.5)" />
+    </svg>
+  )
+}
+
 export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUsers; currentUserId: string }) {
-  const [copied, setCopied] = useState(false)
   const isP1 = currentUserId === duel.player1_id
   const outcome = duel.outcome as Outcome | null
 
@@ -71,18 +92,10 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
 
   const config = OUTCOME_CONFIG[outcome]
   const stake = duel.wagers.gold_amount
+  const goldDelta = getGoldDelta(outcome, isP1, stake)
   const subtitle = config.subtitleFn(isP1, stake)
-  const shortId = duel.id.slice(0, 8).toUpperCase()
-  const outcomeLabel = outcome === 'both_pledge' ? 'mutual honour 🤝'
-    : outcome.includes('betray') ? 'betrayal 😮'
-    : 'silence 🔇'
-  const shareText = `PACT Match #${shortId} — ${outcomeLabel}. ${stake} Gold at stake.`
 
-  async function copyResult() {
-    await navigator.clipboard.writeText(shareText)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  const shareText = `I played PACT and ${outcome === 'both_pledge' ? 'we both pledged 🤝' : outcome.includes('betray') ? 'there was betrayal 😮' : 'silence fell 🔇'} — ${stake} Gold at stake. Play at pact.game`
 
   function shareOnX() {
     window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')
@@ -95,33 +108,30 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
         <span className="text-6xl leading-none">{config.emoji}</span>
       </div>
 
-      <h1 className="font-serif text-[28px] font-bold mb-3">{config.title}</h1>
-      <p className="font-mono text-sm text-[#555] mb-10">{subtitle}</p>
+      <h1 className="font-fell text-[28px] mb-5">{config.title}</h1>
 
-      <div className="mb-6">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-2">Share your result</p>
-        <p className="font-sans text-sm text-[#444] bg-white border border-[#d8d4cc] rounded-lg px-3 py-2 mb-2">{shareText}</p>
+      <div className="flex items-center gap-2.5 mb-3">
+        <CoinIcon />
+        <span className="font-fell text-3xl text-[#1a1208]">
+          {goldDelta > 0 ? `+${goldDelta}` : `${goldDelta}`}
+        </span>
       </div>
 
+      <p className="font-mono text-sm text-[#555] mb-10">{subtitle}</p>
+
       <div className="flex flex-col gap-3">
-        <button
-          onClick={copyResult}
-          className="border border-[#d8d4cc] rounded-xl px-6 py-3 font-sans text-sm font-medium text-center hover:bg-[#f0ede6] transition-colors"
-        >
-          {copied ? 'Copied ✓' : 'Copy result'}
-        </button>
-        <button
-          onClick={shareOnX}
-          className="border border-[#d8d4cc] rounded-xl px-6 py-3 font-sans text-sm font-medium text-center hover:bg-[#f0ede6] transition-colors"
-        >
-          Share on ⨯
-        </button>
         <Link
           href="/"
-          className="border border-[#d8d4cc] rounded-xl px-6 py-3 font-sans text-sm font-medium text-center hover:bg-[#f0ede6] transition-colors"
+          className="inline-block border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
         >
           Back to Tavern
         </Link>
+        <button
+          onClick={shareOnX}
+          className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
+        >
+          Share on ⧯
+        </button>
       </div>
     </main>
   )

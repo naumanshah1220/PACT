@@ -1,31 +1,30 @@
-import { createAdminClient } from '@/lib/supabase/admin'
-import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type')
-  const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0'))
-  const limit = 20
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const type = searchParams.get('type') ?? 'nobles'
+  const offset = parseInt(searchParams.get('offset') ?? '0', 10)
 
-  const admin = createAdminClient()
+  const supabase = await createClient()
 
   if (type === 'nobles') {
-    const { data } = await admin
+    const { data } = await supabase
       .from('users')
-      .select('id, username, gold_balance, player_number')
+      .select('id, username, gold_balance, honorific')
       .order('gold_balance', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .range(offset, offset + 19)
     return NextResponse.json({ rows: data ?? [] })
   }
 
   if (type === 'honors') {
-    const { data } = await admin
+    const { data } = await supabase
       .from('users')
-      .select('id, username, honor_score, display_initials')
+      .select('id, username, honor_score')
       .order('honor_score', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .range(offset, offset + 19)
     return NextResponse.json({ rows: data ?? [] })
   }
 
-  return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+  return NextResponse.json({ rows: [] })
 }
