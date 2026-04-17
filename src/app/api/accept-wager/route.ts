@@ -16,20 +16,39 @@ export async function POST(req: Request) {
   if (wager.status !== 'open') return NextResponse.json({ error: 'Wager already taken' }, { status: 409 })
   if (wager.poster_id === user.id) return NextResponse.json({ error: 'Cannot challenge yourself' }, { status: 400 })
 
-  // Block if challenger is already in an active duel
-  const { data: activeDuels } = await supabase
+  const admin = createAdminClient()
+
+  // Fetch or auto-create challenger profile
+  let { data: challenger } = await admin.from('users').select('*').eq('id', user.id).single()
+
+  if (!challenger) {
+    if (!wager.practice) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
+    // Auto-create guest profile for anonymous practice players
+    const guestNum = Math.floor(Math.random() * 9000) + 1000
+    const { data: newProfile } = await admin.from('users').insert({
+      id: user.id,
+      username: `Guest${guestNum}`,
+      display_initials: 'GS',
+      gold_balance: 0,
+      honor_score: 0,
+      newbie_day: 1,
+    }).select().single()
+    challenger = newProfile
+    if (!challenger) return NextResponse.json({ error: 'Could not create guest profile' }, { status: 500 })
+  }
+
+  // Block if already in active duel
+  const { data: activeDuels } = await admin
     .from('duels').select('id').eq('status', 'active')
     .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`).limit(1)
   if (activeDuels && activeDuels.length > 0)
     return NextResponse.json({ error: 'Finish your current duel before starting another' }, { status: 400 })
 
-  // Check challenger balance (skip for practice wagers)
-  const { data: challenger } = await supabase.from('users').select('*').eq('id', user.id).single()
-  if (!challenger) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  // Balance check (skip for practice)
   if (!wager.practice && challenger.gold_balance < wager.gold_amount)
     return NextResponse.json({ error: 'Insufficient gold' }, { status: 400 })
-
-  const admin = createAdminClient()
 
   // Mark wager active
   await admin.from('wagers').update({ status: 'active' }).eq('id', wagerId)
@@ -46,7 +65,7 @@ export async function POST(req: Request) {
 
   if (error || !duel) return NextResponse.json({ error: error?.message ?? 'Failed to create duel' }, { status: 500 })
 
-  // Bot auto-play: if poster is a bot, immediately send greeting + set decision
+  // Bot auto-play
   if (isBotId(wager.poster_id)) {
     const cfg = BOT_CONFIG[wager.poster_id]
     const decision = getBotDecision(cfg.strategy)
