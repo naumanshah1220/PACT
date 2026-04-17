@@ -1,5 +1,5 @@
 -- Run this in Supabase SQL Editor to upgrade an existing database
--- All sections are additive and safe to run on a live DB
+-- All sections are additive and safe to run multiple times
 
 -- 1. Add player_number to users
 create sequence if not exists player_number_seq start 1001;
@@ -20,20 +20,25 @@ create table if not exists public.alms_requests (
 create index if not exists idx_alms_requests_status on public.alms_requests(status);
 create index if not exists idx_alms_requests_requester on public.alms_requests(requester_id);
 
--- 3. RLS for alms_requests
+-- 3. RLS for alms_requests (idempotent via exception handling)
 alter table public.alms_requests enable row level security;
-drop policy if exists "Anyone can read open alms requests" on public.alms_requests;
-create policy "Anyone can read open alms requests"
-  on public.alms_requests for select using (true);
-drop policy if exists "Authenticated can post alms request" on public.alms_requests;
-create policy "Authenticated can post alms request"
-  on public.alms_requests for insert with check (auth.uid() = requester_id);
-drop policy if exists "Requester can cancel own request" on public.alms_requests;
-create policy "Requester can cancel own request"
-  on public.alms_requests for update using (auth.uid() = requester_id);
+do $$ begin
+  create policy "Anyone can read open alms requests"
+    on public.alms_requests for select using (true);
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create policy "Authenticated can post alms request"
+    on public.alms_requests for insert with check (auth.uid() = requester_id);
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create policy "Requester can cancel own request"
+    on public.alms_requests for update using (auth.uid() = requester_id);
+exception when duplicate_object then null; end $$;
 
 -- 4. Publish wagers to realtime
-alter publication supabase_realtime add table public.wagers;
+do $$ begin
+  alter publication supabase_realtime add table public.wagers;
+exception when others then null; end $$;
 
 -- 5. hoard_announcements table
 create table if not exists public.hoard_announcements (
@@ -44,9 +49,10 @@ create table if not exists public.hoard_announcements (
   created_at timestamptz not null default now()
 );
 alter table public.hoard_announcements enable row level security;
-drop policy if exists "Anyone can read hoard announcements" on public.hoard_announcements;
-create policy "Anyone can read hoard announcements"
-  on public.hoard_announcements for select using (true);
+do $$ begin
+  create policy "Anyone can read hoard announcements"
+    on public.hoard_announcements for select using (true);
+exception when duplicate_object then null; end $$;
 
 -- 6. Add last_daily_gold_at to users
 alter table public.users add column if not exists last_daily_gold_at date;
@@ -61,7 +67,7 @@ alter table public.wagers add column if not exists practice boolean default fals
 -- 9. Add is_bot to users
 alter table public.users add column if not exists is_bot boolean default false;
 
--- 10. Create bot court characters in auth
+-- 10. Create bot court characters
 insert into auth.users (id, email, encrypted_password, email_confirmed_at, created_at, updated_at, aud, role)
 values
   ('00000000-0000-0000-0001-000000000000', 'bot-friar@pact.internal',    crypt('pact-bot-no-login', gen_salt('bf')), now(), now(), now(), 'authenticated', 'authenticated'),
@@ -78,31 +84,19 @@ values
   ('00000000-0000-0000-0004-000000000000', 'TheOracle',        'TO', 9999,  25, true)
 on conflict (id) do nothing;
 
--- 11. Seed initial bot wagers (idempotent — only inserts if bot has no open wager)
+-- 11. Seed bot wagers (only if bot has no open wager)
 insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
 select '00000000-0000-0000-0001-000000000000', 10, 60, 'open', true, true
-where not exists (
-  select 1 from public.wagers
-  where poster_id = '00000000-0000-0000-0001-000000000000' and status = 'open'
-);
+where not exists (select 1 from public.wagers where poster_id = '00000000-0000-0000-0001-000000000000' and status = 'open');
 
 insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
 select '00000000-0000-0000-0002-000000000000', 15, 60, 'open', true, true
-where not exists (
-  select 1 from public.wagers
-  where poster_id = '00000000-0000-0000-0002-000000000000' and status = 'open'
-);
+where not exists (select 1 from public.wagers where poster_id = '00000000-0000-0000-0002-000000000000' and status = 'open');
 
 insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
 select '00000000-0000-0000-0003-000000000000', 20, 120, 'open', true, true
-where not exists (
-  select 1 from public.wagers
-  where poster_id = '00000000-0000-0000-0003-000000000000' and status = 'open'
-);
+where not exists (select 1 from public.wagers where poster_id = '00000000-0000-0000-0003-000000000000' and status = 'open');
 
 insert into public.wagers (poster_id, gold_amount, timer_minutes, status, practice, spectators_allowed)
 select '00000000-0000-0000-0004-000000000000', 25, 60, 'open', true, true
-where not exists (
-  select 1 from public.wagers
-  where poster_id = '00000000-0000-0000-0004-000000000000' and status = 'open'
-);
+where not exists (select 1 from public.wagers where poster_id = '00000000-0000-0000-0004-000000000000' and status = 'open');
