@@ -1,12 +1,8 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "next build",
-  "devCommand": "next dev",
-  "installCommand": "npm install",
   "crons": [
     {
-      "path": "/api/cron/health",
-      "schedule": "0 9 * * *"
+      "path": "/api/bot-wager?secret=REPLACE_WITH_BOT_CRON_SECRET",
+      "schedule": "0 */3 * * *"
     }
   ]
 }
