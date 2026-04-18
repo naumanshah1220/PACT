@@ -5,7 +5,16 @@ import { BOT_CONFIG, getBotDecision, isBotId } from '@/lib/bots'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  // Cookie-based auth (normal flow) or Bearer token (anonymous practice flow)
+  let { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    const authHeader = req.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const { data } = await supabase.auth.getUser(authHeader.slice(7))
+      user = data.user
+    }
+  }
   if (!user) return NextResponse.json({ error: 'Sign in to challenge' }, { status: 401 })
 
   const { wagerId } = await req.json()
@@ -18,7 +27,6 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient()
 
-  // Fetch or auto-create challenger profile
   let { data: challenger } = await admin.from('users').select('*').eq('id', user.id).single()
 
   if (!challenger) {
@@ -55,14 +63,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Finish your current duel before starting another' }, { status: 400 })
   }
 
-  // Balance check (skip for practice)
   if (!wager.practice && challenger.gold_balance < wager.gold_amount)
     return NextResponse.json({ error: 'Insufficient gold' }, { status: 400 })
 
-  // Mark wager active
   await admin.from('wagers').update({ status: 'active' }).eq('id', wagerId)
 
-  // Create duel
   const deadline = new Date(Date.now() + wager.timer_minutes * 60 * 1000).toISOString()
   const { data: duel, error } = await admin.from('duels').insert({
     wager_id: wagerId,
@@ -74,7 +79,6 @@ export async function POST(req: Request) {
 
   if (error || !duel) return NextResponse.json({ error: error?.message ?? 'Failed to create duel' }, { status: 500 })
 
-  // Bot auto-play
   if (isBotId(wager.poster_id)) {
     const cfg = BOT_CONFIG[wager.poster_id]
     const decision = getBotDecision(cfg.strategy)
