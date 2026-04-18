@@ -103,7 +103,7 @@ function WagerCard({
   const [statusMsg, setStatusMsg] = useState('')
   const challengingRef = useRef(false)
   const isOwn = currentUserId === wager.users.id
-  const isPractice = wager.practice
+  const isPractice = wager.practice === true
 
   async function handleChallenge() {
     if (challengingRef.current) return
@@ -119,13 +119,12 @@ function WagerCard({
     setStatusMsg('')
     try {
       if (!isLoggedIn && isPractice) {
-        setStatusMsg('Starting session…')
+        setStatusMsg('Starting session\u2026')
         const { data: anonData, error } = await supabase.auth.signInAnonymously()
         if (error || !anonData.session) {
           alert(`Could not start practice session: ${error?.message ?? 'no session'}`)
           return
         }
-        // Pass access token directly to avoid cookie timing race
         const res = await fetch('/api/accept-wager', {
           method: 'POST',
           headers: {
@@ -136,7 +135,6 @@ function WagerCard({
         })
         const data = await res.json()
         if (data.duelId) {
-          // Full page load so server sees fresh session cookie
           window.location.href = `/duel/${data.duelId}`
         } else {
           alert(data.error || 'Could not accept wager')
@@ -201,7 +199,7 @@ function WagerCard({
           disabled={loading}
           className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50"
         >
-          {loading ? (statusMsg || 'Starting…') : isPractice ? 'Practice →' : 'Challenge →'}
+          {loading ? (statusMsg || 'Starting\u2026') : isPractice ? 'Practice →' : 'Challenge →'}
         </button>
       )}
     </div>
@@ -241,7 +239,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       case '50plus': return w.filter(x => x.gold_amount > 50)
       case 'quick': return w.filter(x => x.timer_minutes < 60)
       case 'long': return w.filter(x => x.timer_minutes >= 720)
-      case 'practice': return w.filter(x => x.practice)
+      case 'practice': return w.filter(x => x.practice === true)
       default: return w
     }
   }, [wagers, filter, search])

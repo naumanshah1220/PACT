@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import TavernClient from './TavernClient'
 import PactHeader from '@/components/PactHeader'
 import BanBanner from '@/components/BanBanner'
@@ -8,8 +9,10 @@ export const revalidate = 0
 
 export default async function TavernPage() {
   const supabase = await createClient()
+  const admin = createAdminClient()
 
-  const { data: wagers } = await supabase
+  // Use admin client so the practice field is always visible regardless of RLS
+  const { data: wagers } = await admin
     .from('wagers')
     .select('*, users(*)')
     .eq('status', 'open')
