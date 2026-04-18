@@ -11,6 +11,7 @@ export default async function HonorsPage() {
   const { data: players } = await supabase
     .from('users')
     .select('id, username, honor_score, display_initials')
+    .eq('is_bot', false)
     .order('honor_score', { ascending: false })
     .range(0, 19)
 
