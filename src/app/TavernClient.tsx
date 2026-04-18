@@ -47,10 +47,7 @@ function timeLeft(deadline: string) {
 
 function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
   return (
-    <Link
-      href={`/duel/${info.id}`}
-      className="block border border-[#1a1208] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all"
-    >
+    <Link href={`/duel/${info.id}`} className="block border border-[#1a1208] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all">
       <div className="flex items-center justify-between mb-2">
         <span className="font-mono text-[10px] text-[#888] uppercase tracking-widest">Your active duel</span>
         <span className="font-mono text-[10px] text-[#888]">{timeLeft(info.deadline)}</span>
@@ -67,15 +64,10 @@ function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
 function SpectatableCard({ duel }: { duel: SpectatableDuel }) {
   const router = useRouter()
   return (
-    <div
-      onClick={() => router.push(`/spectate/${duel.duelId}`)}
-      className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all"
-    >
+    <div onClick={() => router.push(`/spectate/${duel.duelId}`)} className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all">
       <div className="flex items-center justify-between mb-2">
         <span className="font-mono text-[10px] uppercase tracking-widest text-amber-700">● Afoot</span>
-        <span className="font-mono text-[10px] text-[#888]">
-          <span className="text-amber-600">⬡</span> {duel.goldAmount}
-        </span>
+        <span className="font-mono text-[10px] text-[#888]"><span className="text-amber-600">⬡</span> {duel.goldAmount}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <Avatar initials={duel.p1.display_initials} size="sm" />
@@ -88,9 +80,7 @@ function SpectatableCard({ duel }: { duel: SpectatableDuel }) {
   )
 }
 
-function WagerCard({
-  wager, index, isNewest, currentUserId, isLoggedIn,
-}: {
+function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
   wager: WagerWithUser
   index: number
   isNewest: boolean
@@ -103,46 +93,29 @@ function WagerCard({
   const [statusMsg, setStatusMsg] = useState('')
   const challengingRef = useRef(false)
   const isOwn = currentUserId === wager.users.id
-  // treat as practice if either flag is set or poster is a bot
   const isPractice = wager.practice === true || wager.users.is_bot === true
 
   async function handleChallenge() {
     if (challengingRef.current) return
     challengingRef.current = true
-
-    if (!isLoggedIn && !isPractice) {
-      router.push('/login')
-      challengingRef.current = false
-      return
-    }
-
+    if (!isLoggedIn && !isPractice) { router.push('/login'); challengingRef.current = false; return }
     setLoading(true)
     setStatusMsg('')
     try {
       if (!isLoggedIn && isPractice) {
         setStatusMsg('Starting session…')
         const { data: anonData, error } = await supabase.auth.signInAnonymously()
-        if (error || !anonData.session) {
-          alert(`Could not start practice session: ${error?.message ?? 'no session'}`)
-          return
-        }
+        if (error || !anonData.session) { alert(`Could not start practice session: ${error?.message ?? 'no session'}`); return }
         const res = await fetch('/api/accept-wager', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${anonData.session.access_token}`,
-          },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anonData.session.access_token}` },
           body: JSON.stringify({ wagerId: wager.id }),
         })
         const data = await res.json()
-        if (data.duelId) {
-          window.location.href = `/duel/${data.duelId}`
-        } else {
-          alert(data.error || 'Could not accept wager')
-        }
+        if (data.duelId) window.location.href = `/duel/${data.duelId}`
+        else alert(data.error || 'Could not accept wager')
         return
       }
-
       const res = await fetch('/api/accept-wager', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -159,47 +132,25 @@ function WagerCard({
   }
 
   return (
-    <div
-      className={`bg-[#f5f3ea] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all ${
-        isNewest ? 'border-2 border-[#1a1208]' : 'border border-[#d8d4cc]'
-      }`}
-      style={{ animationDelay: `${index * 60}ms` }}
-    >
+    <div className={`bg-[#f5f3ea] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all ${isNewest ? 'border-2 border-[#1a1208]' : 'border border-[#d8d4cc]'}`} style={{ animationDelay: `${index * 60}ms` }}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <Avatar initials={wager.users.display_initials} size="sm" />
-          {isPractice && (
-            <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Practice</span>
-          )}
+          {isPractice && <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Practice</span>}
         </div>
         <div className="text-right">
           <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
           <span className="font-mono text-[10px] text-[#888] block">gold</span>
         </div>
       </div>
-
       <p className="font-fell text-sm mb-1">{wager.users.username}</p>
-      <p className="font-mono text-[10px] text-[#888] mb-3">
-        posted {timeAgo(wager.created_at)} &middot; timer: {formatTimer(wager.timer_minutes)}
-      </p>
-
+      <p className="font-mono text-[10px] text-[#888] mb-3">posted {timeAgo(wager.created_at)} &middot; timer: {formatTimer(wager.timer_minutes)}</p>
       {isOwn ? (
-        <div className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#bbb] text-center uppercase tracking-widest">
-          Awaiting challenger
-        </div>
+        <div className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#bbb] text-center uppercase tracking-widest">Awaiting challenger</div>
       ) : !isLoggedIn && !isPractice ? (
-        <Link
-          href="/login"
-          className="block w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] text-center hover:bg-[#f0ede6] transition-colors"
-        >
-          Sign in to challenge →
-        </Link>
+        <Link href="/login" className="block w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] text-center hover:bg-[#f0ede6] transition-colors">Sign in to challenge →</Link>
       ) : (
-        <button
-          onClick={handleChallenge}
-          disabled={loading}
-          className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50"
-        >
+        <button onClick={handleChallenge} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
           {loading ? (statusMsg || 'Starting…') : isPractice ? 'Practice →' : 'Challenge →'}
         </button>
       )}
@@ -268,19 +219,9 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
           <span className="font-mono text-[10px] text-[#888]">Gold</span>
         </div>
         {currentUser ? (
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-[#1a1208] text-[#EEEDE4] font-mono text-[11px] rounded-full px-4 py-1.5 hover:opacity-90 transition-opacity"
-          >
-            + Post challenge
-          </button>
+          <button onClick={() => setShowModal(true)} className="bg-[#1a1208] text-[#EEEDE4] font-mono text-[11px] rounded-full px-4 py-1.5 hover:opacity-90 transition-opacity">+ Post challenge</button>
         ) : (
-          <Link
-            href="/login"
-            className="bg-[#1a1208] text-[#EEEDE4] font-mono text-[11px] rounded-full px-4 py-1.5 hover:opacity-90 transition-opacity"
-          >
-            Sign in to play
-          </Link>
+          <Link href="/login" className="bg-[#1a1208] text-[#EEEDE4] font-mono text-[11px] rounded-full px-4 py-1.5 hover:opacity-90 transition-opacity">Sign in to play</Link>
         )}
       </div>
 
@@ -300,45 +241,26 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       )}
 
       <div className="sticky top-[57px] z-40 bg-[#EEEDE4] pb-3 pt-1">
-        <input
-          type="text"
-          placeholder="Search by player name…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full border border-[#d8d4cc] rounded-lg px-3 py-2 bg-[#f5f3ea] font-mono text-[11px] mb-2 focus:outline-none focus:border-[#aaa]"
-        />
+        <input type="text" placeholder="Search by player name…" value={search} onChange={e => setSearch(e.target.value)} className="w-full border border-[#d8d4cc] rounded-lg px-3 py-2 bg-[#f5f3ea] font-mono text-[11px] mb-2 focus:outline-none focus:border-[#aaa]" />
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {filters.map(f => (
-            <button
-              key={f.key} onClick={() => setFilter(f.key)}
-              className={`whitespace-nowrap font-mono text-[11px] px-3 py-1 rounded-full border transition-colors ${
-                filter === f.key ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'
-              }`}
-            >{f.label}</button>
+            <button key={f.key} onClick={() => setFilter(f.key)} className={`whitespace-nowrap font-mono text-[11px] px-3 py-1 rounded-full border transition-colors ${filter === f.key ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'}`}>{f.label}</button>
           ))}
         </div>
       </div>
 
-      <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">
-        Open Challenges<span className="cursor-blink ml-0.5">_</span>
-      </p>
+      <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Open Challenges<span className="cursor-blink ml-0.5">_</span></p>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="font-mono text-sm text-[#888]">No challenges found.</p>
-        </div>
+        <div className="text-center py-20"><p className="font-mono text-sm text-[#888]">No challenges found.</p></div>
       ) : isFiltered || filtered.length < 4 ? (
         <div className="grid grid-cols-2 gap-3">
-          {filtered.map((w, i) => (
-            <WagerCard key={w.id} wager={w} index={i} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />
-          ))}
+          {filtered.map((w, i) => <WagerCard key={w.id} wager={w} index={i} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
         </div>
       ) : (
         <div className="tavern-scroll-container h-[560px]">
           <div className="tavern-scroll-track grid grid-cols-2 gap-3">
-            {[...filtered, ...filtered, ...filtered].map((w, i) => (
-              <WagerCard key={`${w.id}-${i}`} wager={w} index={i % filtered.length} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />
-            ))}
+            {[...filtered, ...filtered, ...filtered].map((w, i) => <WagerCard key={`${w.id}-${i}`} wager={w} index={i % filtered.length} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
           </div>
         </div>
       )}
@@ -349,9 +271,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         ))}
       </div>
 
-      {showModal && currentUser && (
-        <PostChallengeModal currentUser={currentUser} onClose={() => setShowModal(false)} />
-      )}
+      {showModal && currentUser && <PostChallengeModal currentUser={currentUser} onClose={() => setShowModal(false)} />}
     </main>
   )
 }
