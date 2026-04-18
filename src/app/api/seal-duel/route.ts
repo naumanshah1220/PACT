@@ -22,6 +22,12 @@ export async function POST(req: Request) {
   if (!myDecision)
     return NextResponse.json({ error: 'Choose pledge or betray first' }, { status: 400 })
 
+  // Practice (bot) duels: resolve immediately when human seals — no waiting
+  if (duel.wagers.practice) {
+    await resolveOutcome(duelId, admin)
+    return NextResponse.json({ resolved: true })
+  }
+
   if (!duel.seal_requested_by) {
     await admin.from('duels').update({ seal_requested_by: user.id }).eq('id', duelId)
     return NextResponse.json({ sealRequested: true })

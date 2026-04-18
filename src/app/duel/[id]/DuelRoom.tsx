@@ -74,7 +74,20 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `duel_id=eq.${duel.id}` },
         async (payload) => {
           const { data } = await supabase.from('messages').select('*, users(*)').eq('id', payload.new.id).single()
-          if (data) setMessages(prev => [...prev, data as MessageWithUser])
+          if (data) setMessages(prev => {
+            // Replace matching optimistic message, or append new one
+            const optIdx = prev.findIndex(m =>
+              m.id.startsWith('opt-') &&
+              m.sender_id === (data as MessageWithUser).sender_id &&
+              m.content === (data as MessageWithUser).content
+            )
+            if (optIdx !== -1) {
+              const next = [...prev]
+              next[optIdx] = data as MessageWithUser
+              return next
+            }
+            return [...prev, data as MessageWithUser]
+          })
         })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -116,7 +129,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   }, [])
 
   const myMessaged = isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged
-  // For bot duels, only the human needs to speak (bot greeting already counts)
   const bothMessaged = opponentIsBot
     ? myMessaged
     : (liveDuel.player1_messaged && liveDuel.player2_messaged)
@@ -133,9 +145,23 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     setSending(true)
     const content = input.trim()
     setInput('')
-    await supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content })
+
+    // Optimistic: show message immediately
+    const myProfile = isP1 ? duel.player1 : duel.player2
+    setMessages(prev => [...prev, {
+      id: `opt-${Date.now()}`,
+      duel_id: duel.id,
+      sender_id: currentUserId,
+      content,
+      created_at: new Date().toISOString(),
+      users: myProfile,
+    } as MessageWithUser])
+
     const field = isP1 ? 'player1_messaged' : 'player2_messaged'
-    await supabase.from('duels').update({ [field]: true }).eq('id', duel.id)
+    await Promise.all([
+      supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
+      supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
+    ])
 
     if (opponentIsBot) {
       fetch('/api/bot-reply', {
@@ -178,7 +204,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   return (
     <div className="max-w-2xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
       <div className="px-4 py-3 border-b border-[#d8d4cc] flex items-center justify-between">
-        <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">← Back</Link>
+        <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">&larr; Back</Link>
         <span className="font-serif text-lg">The Duel</span>
         <span className="font-mono text-xs">
           <span className="text-amber-600">⬡</span> {duel.wagers.gold_amount} gold at stake
