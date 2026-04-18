@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import TavernClient from './TavernClient'
 import PactHeader from '@/components/PactHeader'
 import BanBanner from '@/components/BanBanner'
@@ -8,16 +9,16 @@ export const revalidate = 0
 
 export default async function TavernPage() {
   const supabase = await createClient()
+  const admin = createAdminClient()
 
-  // Open wagers (all visitors see these)
-  const { data: wagers } = await supabase
+  // Admin client so practice field is always visible regardless of RLS
+  const { data: wagers } = await admin
     .from('wagers')
     .select('*, users(*)')
     .eq('status', 'open')
     .order('created_at', { ascending: false })
     .limit(60)
 
-  // Active spectatable duels
   const { data: activeDuelRaw } = await supabase
     .from('duels')
     .select('id, wager_id, player1:users!duels_player1_id_fkey(username, display_initials), player2:users!duels_player2_id_fkey(username, display_initials), wagers!inner(id, gold_amount, spectators_allowed, practice, users(username, display_initials))')
