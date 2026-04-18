@@ -60,14 +60,14 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const isP1 = currentUserId === duel.player1_id
+  const opponent = isP1 ? duel.player2 : duel.player1
+  const opponentIsBot = !!(opponent as any).is_bot
 
-  // Restore decision from duel on mount
   useEffect(() => {
     const saved = isP1 ? duel.player1_decision : duel.player2_decision
     if (saved) setDecision(saved as 'pledge' | 'betray')
   }, [])
 
-  // Realtime: messages
   useEffect(() => {
     const channel = supabase
       .channel(`duel-messages-${duel.id}`)
@@ -80,7 +80,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     return () => { supabase.removeChannel(channel) }
   }, [duel.id])
 
-  // Realtime: duel state
   useEffect(() => {
     const channel = supabase
       .channel(`duel-state-${duel.id}`)
@@ -93,12 +92,10 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     return () => { supabase.removeChannel(channel) }
   }, [duel.id])
 
-  // Auto-scroll chat
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Raven nudge: show button after 25% of timer if opponent hasn't messaged
   useEffect(() => {
     const deadline = new Date(duel.deadline).getTime()
     const created = new Date(duel.created_at).getTime()
@@ -111,7 +108,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     }
   }, [liveDuel.player1_messaged, liveDuel.player2_messaged])
 
-  // Client-side deadline trigger: nudge server to resolve when timer hits 0
   useEffect(() => {
     const delay = new Date(duel.deadline).getTime() - Date.now()
     if (delay <= 0) { fetch('/api/resolve-duel', { method: 'POST' }); return }
@@ -125,7 +121,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const canSeal = !!myDecision && opponentDecided
   const iHaveSealed = liveDuel.seal_requested_by === currentUserId
   const theyHaveSealed = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
-  const ravenAlreadySent = messages.some(m => m.content === '— a raven was sent —')
+  const ravenAlreadySent = messages.some(m => m.content === '\u2014 a raven was sent \u2014')
 
   async function sendMessage() {
     if (!input.trim() || sending) return
@@ -135,6 +131,15 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     await supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content })
     const field = isP1 ? 'player1_messaged' : 'player2_messaged'
     await supabase.from('duels').update({ [field]: true }).eq('id', duel.id)
+
+    if (opponentIsBot) {
+      fetch('/api/bot-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duelId: duel.id, botId: opponent.id }),
+      })
+    }
+
     setSending(false)
   }
 
@@ -149,7 +154,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     await supabase.from('messages').insert({
       duel_id: duel.id,
       sender_id: currentUserId,
-      content: '— a raven was sent —',
+      content: '\u2014 a raven was sent \u2014',
     })
   }
 
@@ -167,7 +172,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
-      {/* Top bar */}
       <div className="px-4 py-3 border-b border-[#d8d4cc] flex items-center justify-between">
         <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">← Back</Link>
         <span className="font-serif text-lg">The Duel</span>
@@ -176,7 +180,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </span>
       </div>
 
-      {/* VS strip */}
       <div className="bg-[#f2f0eb] border-b border-[#d8d4cc] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Avatar initials={duel.player1.display_initials} size="sm" />
@@ -189,10 +192,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </div>
       </div>
 
-      {/* Timer */}
       <TimerBar deadline={duel.deadline} />
 
-      {/* Raven button */}
       {showRaven && !ravenAlreadySent && (
         <div className="mx-4 mt-2">
           <button
@@ -204,14 +205,20 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </div>
       )}
 
-      {/* Chat */}
+      {opponentIsBot && (
+        <div className="mx-4 mt-3 border border-[#d8d4cc] rounded-lg px-3 py-2">
+          <p className="font-mono text-[11px] text-[#888] text-center">
+            Practice duel — no gold earned or lost
+          </p>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 && (
           <p className="text-center font-mono text-xs text-[#bbb] py-8">The silence is deafening. Say something.</p>
         )}
         {messages.map((msg) => {
-          // System message (raven)
-          if (msg.content === '— a raven was sent —') {
+          if (msg.content === '\u2014 a raven was sent \u2014') {
             return (
               <div key={msg.id} className="text-center py-1">
                 <span className="font-mono text-[10px] text-[#bbb] italic">{msg.content}</span>
@@ -235,12 +242,11 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         <div ref={bottomRef} />
       </div>
 
-      {/* Message input */}
       <div className="px-4 py-3 border-t border-[#d8d4cc] flex gap-2">
         <input
           type="text" value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && sendMessage()}
-          placeholder="Say something…"
+          placeholder="Say something\u2026"
           className="flex-1 border border-[#d8d4cc] rounded-lg px-3 py-2 bg-[#faf9f7] font-sans text-sm focus:outline-none focus:border-[#aaa]"
         />
         <button onClick={sendMessage} disabled={sending || !input.trim()}
@@ -249,7 +255,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </button>
       </div>
 
-      {/* Decision area */}
       <div className="px-4 pt-4 pb-2 border-t border-[#d8d4cc] bg-white">
         {!bothMessaged && (
           <p className="font-mono text-[10px] text-[#888] text-center mb-3 uppercase tracking-widest">Both must speak before deciding</p>
@@ -269,7 +274,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
             }`}>Betray</button>
         </div>
 
-        {/* Seal button */}
         {canSeal && (
           <div className="flex justify-center mt-4">
             {iHaveSealed ? (
@@ -294,7 +298,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
           </div>
         )}
 
-        {/* Outcome reference strip */}
         <div className="mt-4 pt-3 border-t border-[#f0ede6] grid grid-cols-3 divide-x divide-[#f0ede6] text-center">
           <p className="font-mono text-[9px] text-[#bbb] px-1 leading-tight">both pledge → +25% each</p>
           <p className="font-mono text-[9px] text-[#bbb] px-1 leading-tight">one betrays → winner takes all</p>

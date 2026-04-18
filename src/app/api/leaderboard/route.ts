@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     const { data } = await supabase
       .from('users')
       .select('id, username, gold_balance, honorific')
+      .eq('is_bot', false)
       .order('gold_balance', { ascending: false })
       .range(offset, offset + 19)
     return NextResponse.json({ rows: data ?? [] })
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
     const { data } = await supabase
       .from('users')
       .select('id, username, honor_score')
+      .eq('is_bot', false)
       .order('honor_score', { ascending: false })
       .range(offset, offset + 19)
     return NextResponse.json({ rows: data ?? [] })

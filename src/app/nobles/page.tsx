@@ -12,6 +12,7 @@ export default async function NoblesPage() {
   const { data: nobles } = await supabase
     .from('users')
     .select('id, username, gold_balance, honorific')
+    .eq('is_bot', false)
     .order('gold_balance', { ascending: false })
     .limit(20)
 

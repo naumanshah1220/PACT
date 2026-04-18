@@ -66,6 +66,9 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
   }
 
   const shareText = `I have ${profile.gold_balance} Gold and an honour score of ${profile.honor_score} on PACT. Come challenge me.`
+  const playerNum = profile.player_number != null
+    ? String(profile.player_number).padStart(5, '0')
+    : null
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
@@ -75,8 +78,8 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
           <div className="flex-1">
             <h1 className="font-fell text-2xl">{profile.username}</h1>
             <div className="flex items-center gap-3 mt-0.5">
-              {profile.player_number !== null && profile.player_number !== undefined && (
-                <span className="font-mono text-[11px] text-[#bbb]">#{profile.player_number}</span>
+              {playerNum && (
+                <span className="font-mono text-[11px] text-[#bbb]">#{playerNum}</span>
               )}
               <select
                 value={honorific ?? ''}
