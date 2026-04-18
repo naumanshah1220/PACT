@@ -100,6 +100,7 @@ function WagerCard({
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const [statusMsg, setStatusMsg] = useState('')
   const challengingRef = useRef(false)
   const isOwn = currentUserId === wager.users.id
   const isPractice = wager.practice
@@ -115,10 +116,32 @@ function WagerCard({
     }
 
     setLoading(true)
+    setStatusMsg('')
     try {
       if (!isLoggedIn && isPractice) {
-        const { error } = await supabase.auth.signInAnonymously()
-        if (error) { alert('Could not start practice session'); return }
+        setStatusMsg('Starting session…')
+        const { data: anonData, error } = await supabase.auth.signInAnonymously()
+        if (error || !anonData.session) {
+          alert(`Could not start practice session: ${error?.message ?? 'no session'}`)
+          return
+        }
+        // Pass access token directly to avoid cookie timing race
+        const res = await fetch('/api/accept-wager', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${anonData.session.access_token}`,
+          },
+          body: JSON.stringify({ wagerId: wager.id }),
+        })
+        const data = await res.json()
+        if (data.duelId) {
+          // Full page load so server sees fresh session cookie
+          window.location.href = `/duel/${data.duelId}`
+        } else {
+          alert(data.error || 'Could not accept wager')
+        }
+        return
       }
 
       const res = await fetch('/api/accept-wager', {
@@ -131,6 +154,7 @@ function WagerCard({
       else alert(data.error || 'Could not accept wager')
     } finally {
       setLoading(false)
+      setStatusMsg('')
       challengingRef.current = false
     }
   }
@@ -177,7 +201,7 @@ function WagerCard({
           disabled={loading}
           className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50"
         >
-          {loading ? 'Starting…' : isPractice ? 'Practice →' : 'Challenge →'}
+          {loading ? (statusMsg || 'Starting…') : isPractice ? 'Practice →' : 'Challenge →'}
         </button>
       )}
     </div>
