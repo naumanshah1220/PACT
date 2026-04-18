@@ -18,6 +18,7 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient()
 
+  // Fetch or auto-create challenger profile
   let { data: challenger } = await admin.from('users').select('*').eq('id', user.id).single()
 
   if (!challenger) {
@@ -37,17 +38,31 @@ export async function POST(req: Request) {
     if (!challenger) return NextResponse.json({ error: 'Could not create guest profile' }, { status: 500 })
   }
 
-  const { data: activeDuels } = await admin
+  // Prevent challenging the same opponent twice
+  const { data: sameOpponentDuel } = await admin
     .from('duels').select('id').eq('status', 'active')
-    .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`).limit(1)
-  if (activeDuels && activeDuels.length > 0)
-    return NextResponse.json({ error: 'Finish your current duel before starting another' }, { status: 400 })
+    .or(`and(player1_id.eq.${wager.poster_id},player2_id.eq.${user.id}),and(player1_id.eq.${user.id},player2_id.eq.${wager.poster_id})`)
+    .limit(1)
+  if (sameOpponentDuel && sameOpponentDuel.length > 0)
+    return NextResponse.json({ error: 'Already in a duel with this opponent' }, { status: 409 })
 
+  // Block if already in active duel (real wagers only)
+  if (!wager.practice) {
+    const { data: activeDuels } = await admin
+      .from('duels').select('id').eq('status', 'active')
+      .or(`player1_id.eq.${user.id},player2_id.eq.${user.id}`).limit(1)
+    if (activeDuels && activeDuels.length > 0)
+      return NextResponse.json({ error: 'Finish your current duel before starting another' }, { status: 400 })
+  }
+
+  // Balance check (skip for practice)
   if (!wager.practice && challenger.gold_balance < wager.gold_amount)
     return NextResponse.json({ error: 'Insufficient gold' }, { status: 400 })
 
+  // Mark wager active
   await admin.from('wagers').update({ status: 'active' }).eq('id', wagerId)
 
+  // Create duel
   const deadline = new Date(Date.now() + wager.timer_minutes * 60 * 1000).toISOString()
   const { data: duel, error } = await admin.from('duels').insert({
     wager_id: wagerId,
@@ -59,6 +74,7 @@ export async function POST(req: Request) {
 
   if (error || !duel) return NextResponse.json({ error: error?.message ?? 'Failed to create duel' }, { status: 500 })
 
+  // Bot auto-play
   if (isBotId(wager.poster_id)) {
     const cfg = BOT_CONFIG[wager.poster_id]
     const decision = getBotDecision(cfg.strategy)

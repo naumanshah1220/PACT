@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -100,11 +100,19 @@ function WagerCard({
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const challengingRef = useRef(false)
   const isOwn = currentUserId === wager.users.id
   const isPractice = wager.practice
 
   async function handleChallenge() {
-    if (!isLoggedIn && !isPractice) { router.push('/login'); return }
+    if (challengingRef.current) return
+    challengingRef.current = true
+
+    if (!isLoggedIn && !isPractice) {
+      router.push('/login')
+      challengingRef.current = false
+      return
+    }
 
     setLoading(true)
     try {
@@ -123,6 +131,7 @@ function WagerCard({
       else alert(data.error || 'Could not accept wager')
     } finally {
       setLoading(false)
+      challengingRef.current = false
     }
   }
 
