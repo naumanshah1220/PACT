@@ -6,7 +6,7 @@ import { BOT_CONFIG, getBotDecision, isBotId } from '@/lib/bots'
 export async function POST(req: Request) {
   const supabase = await createClient()
 
-  // Cookie-based auth (normal) or Bearer token (anonymous practice flow)
+  // Cookie-based auth (normal flow) or Bearer token (anonymous practice flow)
   let { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     const authHeader = req.headers.get('authorization')
@@ -19,18 +19,20 @@ export async function POST(req: Request) {
 
   const { wagerId } = await req.json()
 
-  const admin = createAdminClient()
-
-  const { data: wager } = await admin
+  const { data: wager } = await supabase
     .from('wagers').select('*').eq('id', wagerId).single()
   if (!wager) return NextResponse.json({ error: 'Wager not found' }, { status: 404 })
   if (wager.status !== 'open') return NextResponse.json({ error: 'Wager already taken' }, { status: 409 })
   if (wager.poster_id === user.id) return NextResponse.json({ error: 'Cannot challenge yourself' }, { status: 400 })
 
+  const admin = createAdminClient()
+
   let { data: challenger } = await admin.from('users').select('*').eq('id', user.id).single()
 
   if (!challenger) {
-    if (!wager.practice) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    if (!wager.practice) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
     const guestNum = Math.floor(Math.random() * 9000) + 1000
     const { data: newProfile } = await admin.from('users').insert({
       id: user.id,
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
     if (!challenger) return NextResponse.json({ error: 'Could not create guest profile' }, { status: 500 })
   }
 
-  // Prevent duplicate duel with same opponent
+  // Prevent challenging the same opponent twice
   const { data: sameOpponentDuel } = await admin
     .from('duels').select('id').eq('status', 'active')
     .or(`and(player1_id.eq.${wager.poster_id},player2_id.eq.${user.id}),and(player1_id.eq.${user.id},player2_id.eq.${wager.poster_id})`)
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
   if (sameOpponentDuel && sameOpponentDuel.length > 0)
     return NextResponse.json({ error: 'Already in a duel with this opponent' }, { status: 409 })
 
-  // Block if in active duel (real wagers only)
+  // Block if already in active duel (real wagers only)
   if (!wager.practice) {
     const { data: activeDuels } = await admin
       .from('duels').select('id').eq('status', 'active')

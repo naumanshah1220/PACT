@@ -11,7 +11,6 @@ export default async function TavernPage() {
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  // Admin client so practice field is always visible regardless of RLS
   const { data: wagers } = await admin
     .from('wagers')
     .select('*, users(*)')
