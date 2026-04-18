@@ -102,7 +102,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     const elapsed25 = created + (deadline - created) * 0.25
     const delay = Math.max(0, elapsed25 - Date.now())
     const opponentMessaged = isP1 ? liveDuel.player2_messaged : liveDuel.player1_messaged
-    if (!opponentMessaged) {
+    if (!opponentMessaged && !opponentIsBot) {
       const t = setTimeout(() => setShowRaven(true), delay)
       return () => clearTimeout(t)
     }
@@ -115,7 +115,12 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     return () => clearTimeout(t)
   }, [])
 
-  const bothMessaged = liveDuel.player1_messaged && liveDuel.player2_messaged
+  const myMessaged = isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged
+  // For bot duels, only the human needs to speak (bot greeting already counts)
+  const bothMessaged = opponentIsBot
+    ? myMessaged
+    : (liveDuel.player1_messaged && liveDuel.player2_messaged)
+
   const myDecision = isP1 ? liveDuel.player1_decision : liveDuel.player2_decision
   const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
   const canSeal = !!myDecision && opponentDecided
@@ -257,7 +262,9 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
       <div className="px-4 pt-4 pb-2 border-t border-[#d8d4cc] bg-white">
         {!bothMessaged && (
-          <p className="font-mono text-[10px] text-[#888] text-center mb-3 uppercase tracking-widest">Both must speak before deciding</p>
+          <p className="font-mono text-[10px] text-[#888] text-center mb-3 uppercase tracking-widest">
+            {opponentIsBot ? 'Send a message to unlock your decision' : 'Both must speak before deciding'}
+          </p>
         )}
         <div className="flex gap-3">
           <button onClick={() => makeDecision('pledge')} disabled={!bothMessaged}
