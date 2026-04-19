@@ -6,11 +6,14 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/Avatar'
 import PostChallengeModal from '@/components/PostChallengeModal'
+import TutorialModal from '@/components/TutorialModal'
 import type { WagerWithUser, UserRow, SpectatableDuel } from '@/types/database'
 
 type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
 
 const PRACTICE_DISPLAY_COUNT = 8
+const CARD_W = 240
+const GRID_COLS = 3
 
 interface ActiveDuelInfo {
   id: string
@@ -73,10 +76,10 @@ function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
   )
 }
 
-function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
+function AFootCard({ duel }: { duel: SpectatableDuel }) {
   const router = useRouter()
   return (
-    <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all" style={{ animationDelay: `${index * 60}ms` }}>
+    <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all h-full">
       <div className="flex items-start justify-between mb-3 gap-2">
         <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           <Avatar initials={duel.poster.display_initials} size="sm" />
@@ -94,17 +97,17 @@ function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
   )
 }
 
-function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
-  wager: WagerWithUser; index: number; isNewest: boolean; currentUserId: string | null; isLoggedIn: boolean
+function WagerCard({ wager, isNewest, currentUserId, isLoggedIn }: {
+  wager: WagerWithUser; isNewest: boolean; currentUserId: string | null; isLoggedIn: boolean
 }) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
-  const [statusMsg, setStatusMsg] = useState('')
   const challengingRef = useRef(false)
   const isOwn = currentUserId === wager.users.id
 
-  async function handleChallenge() {
+  async function handleChallenge(e: React.MouseEvent) {
+    e.stopPropagation()
     if (challengingRef.current) return
     challengingRef.current = true
     if (!isLoggedIn) { router.push('/login'); challengingRef.current = false; return }
@@ -114,11 +117,11 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
       const data = await res.json()
       if (data.duelId) router.push(`/duel/${data.duelId}`)
       else alert(data.error || 'Could not accept wager')
-    } finally { setLoading(false); setStatusMsg(''); challengingRef.current = false }
+    } finally { setLoading(false); challengingRef.current = false }
   }
 
   return (
-    <div className={`bg-[#f5f3ea] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all ${isNewest ? 'border-2 border-[#1a1208]' : 'border border-[#d8d4cc]'}`} style={{ animationDelay: `${index * 60}ms` }}>
+    <div className={`bg-[#f5f3ea] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all h-full flex flex-col ${isNewest ? 'border-2 border-[#1a1208]' : 'border border-[#d8d4cc]'}`}>
       <div className="flex items-start justify-between mb-3 gap-2">
         <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           <Avatar initials={wager.users.display_initials} size="sm" />
@@ -130,14 +133,18 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{wager.users.username}</p>
-      <p className="font-mono text-[10px] text-[#888] mb-3">posted {timeAgo(wager.created_at)} &middot; timer: {formatTimer(wager.timer_minutes)}</p>
+      {wager.wager_message ? (
+        <p className="font-mono text-[10px] text-[#555] mb-3 italic leading-relaxed flex-1">"{wager.wager_message}"</p>
+      ) : (
+        <p className="font-mono text-[10px] text-[#888] mb-3 flex-1">posted {timeAgo(wager.created_at)} &middot; {formatTimer(wager.timer_minutes)}</p>
+      )}
       {isOwn ? (
         <div className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#bbb] text-center uppercase tracking-widest">Awaiting challenger</div>
       ) : !isLoggedIn ? (
         <Link href="/login" className="block w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] text-center hover:bg-[#f0ede6] transition-colors">Sign in to challenge &rarr;</Link>
       ) : (
         <button onClick={handleChallenge} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
-          {loading ? (statusMsg || 'Starting…') : 'Challenge →'}
+          {loading ? 'Starting…' : 'Challenge →'}
         </button>
       )}
     </div>
@@ -196,6 +203,47 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     () => Array.from({ length: Math.min(PRACTICE_DISPLAY_COUNT, botOptions.length) }, (_, i) => i)
   )
 
+  // Draggable grid
+  const containerRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [gridPos, setGridPos] = useState({ x: 0, y: 0 })
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, ox: 0, oy: 0, moved: false })
+
+  function clampPos(x: number, y: number) {
+    const c = containerRef.current, n = innerRef.current
+    if (!c || !n) return { x, y }
+    return {
+      x: Math.min(0, Math.max(c.offsetWidth - n.scrollWidth, x)),
+      y: Math.min(0, Math.max(c.offsetHeight - n.scrollHeight, y)),
+    }
+  }
+
+  function onGrabDown(e: React.PointerEvent) {
+    dragRef.current = { active: true, startX: e.clientX, startY: e.clientY, ox: gridPos.x, oy: gridPos.y, moved: false }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function onGrabMove(e: React.PointerEvent) {
+    if (!dragRef.current.active) return
+    const dx = e.clientX - dragRef.current.startX
+    const dy = e.clientY - dragRef.current.startY
+    if (!dragRef.current.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      dragRef.current.moved = true
+      if (innerRef.current) innerRef.current.style.pointerEvents = 'none'
+    }
+    if (dragRef.current.moved) setGridPos(clampPos(dragRef.current.ox + dx, dragRef.current.oy + dy))
+  }
+
+  function onGrabUp() {
+    dragRef.current.active = false
+    setTimeout(() => {
+      if (innerRef.current) innerRef.current.style.pointerEvents = ''
+      dragRef.current.moved = false
+    }, 50)
+  }
+
+  useEffect(() => { setGridPos({ x: 0, y: 0 }) }, [filter, search])
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem('pact-bot-slots')
@@ -249,11 +297,12 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     }
   }, [wagers, filter, search])
 
-  const isFiltered = filter !== 'all' || search.trim() !== ''
   const newestId = filtered[0]?.id ?? null
   const isLoggedIn = !!currentUser
   const totalCards = spectatableDuels.length + filtered.length
   const displayedBots = displayedBotIndices.map(i => botOptions[i]).filter(Boolean)
+  const allCards = [...spectatableDuels.map(d => ({ type: 'afoot' as const, data: d })), ...filtered.map(w => ({ type: 'wager' as const, data: w }))]
+  const hasOverflow = allCards.length > GRID_COLS
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -266,6 +315,8 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6">
+      <TutorialModal />
+
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1.5 border border-[#d8d4cc] rounded-full px-3 py-1.5">
           <span className="text-amber-600">⬡</span>
@@ -294,29 +345,60 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         </div>
       </div>
 
-      <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Challenges<span className="cursor-blink ml-0.5">_</span></p>
+      <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-3">Challenges<span className="cursor-blink ml-0.5">_</span></p>
 
-      {totalCards === 0 ? (
-        <div className="text-center py-12"><p className="font-mono text-sm text-[#888]">No open challenges.</p></div>
-      ) : isFiltered || filtered.length < 4 ? (
-        <div className="grid grid-cols-2 gap-3">
-          {spectatableDuels.map((d, i) => <AFootCard key={d.duelId} duel={d} index={i} />)}
-          {filtered.map((w, i) => <WagerCard key={w.id} wager={w} index={spectatableDuels.length + i} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
-        </div>
-      ) : (
-        <>
-          {spectatableDuels.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              {spectatableDuels.map((d, i) => <AFootCard key={d.duelId} duel={d} index={i} />)}
-            </div>
-          )}
-          <div className="tavern-scroll-container h-[560px]">
-            <div className="tavern-scroll-track grid grid-cols-2 gap-3">
-              {[...filtered, ...filtered, ...filtered].map((w, i) => <WagerCard key={`${w.id}-${i}`} wager={w} index={i % filtered.length} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
-            </div>
+      {/* Draggable grid viewport */}
+      <div
+        ref={containerRef}
+        className={`relative overflow-hidden rounded-[12px] select-none touch-none ${
+          totalCards === 0 ? '' : 'cursor-grab active:cursor-grabbing'
+        }`}
+        style={{ height: totalCards === 0 ? 'auto' : 460 }}
+        onPointerDown={totalCards > 0 ? onGrabDown : undefined}
+        onPointerMove={totalCards > 0 ? onGrabMove : undefined}
+        onPointerUp={totalCards > 0 ? onGrabUp : undefined}
+        onPointerCancel={totalCards > 0 ? onGrabUp : undefined}
+      >
+        {totalCards === 0 ? (
+          <div className="py-20 text-center">
+            <p className="font-mono text-sm text-[#888]">No open challenges.</p>
           </div>
-        </>
-      )}
+        ) : (
+          <>
+            <div
+              ref={innerRef}
+              className="absolute p-2 grid gap-3"
+              style={{
+                gridTemplateColumns: `repeat(${GRID_COLS}, ${CARD_W}px)`,
+                transform: `translate(${gridPos.x}px, ${gridPos.y}px)`,
+                willChange: 'transform',
+              }}
+            >
+              {allCards.map((card, i) =>
+                card.type === 'afoot' ? (
+                  <AFootCard key={card.data.duelId} duel={card.data} />
+                ) : (
+                  <WagerCard
+                    key={(card.data as WagerWithUser).id}
+                    wager={card.data as WagerWithUser}
+                    isNewest={(card.data as WagerWithUser).id === newestId}
+                    currentUserId={currentUser?.id ?? null}
+                    isLoggedIn={isLoggedIn}
+                  />
+                )
+              )}
+            </div>
+            {/* Edge fades */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-l from-[#EEEDE4] to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#EEEDE4] to-transparent" />
+            {hasOverflow && (
+              <div className="pointer-events-none absolute bottom-2 inset-x-0 flex justify-center">
+                <span className="font-mono text-[9px] text-[#bbb] uppercase tracking-widest">drag to explore</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="mt-10">
         <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Practice<span className="cursor-blink ml-0.5">_</span></p>
