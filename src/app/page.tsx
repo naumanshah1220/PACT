@@ -4,6 +4,7 @@ import TavernClient from './TavernClient'
 import PactHeader from '@/components/PactHeader'
 import BanBanner from '@/components/BanBanner'
 import type { SpectatableDuel } from '@/types/database'
+import { BOT_PERSONALITIES } from '@/lib/bots'
 
 export const revalidate = 0
 
@@ -11,12 +12,14 @@ export default async function TavernPage() {
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  const { data: wagers } = await admin
+  const { data: wagersRaw } = await admin
     .from('wagers')
     .select('*, users(*)')
     .eq('status', 'open')
     .order('created_at', { ascending: false })
     .limit(60)
+
+  const wagers = (wagersRaw ?? []).filter((w: any) => !w.users?.is_bot)
 
   const { data: activeDuelRaw } = await supabase
     .from('duels')
@@ -34,6 +37,15 @@ export default async function TavernPage() {
     poster: d.wagers.users,
     p1: d.player1,
     p2: d.player2,
+  }))
+
+  const botOptions = BOT_PERSONALITIES.map((p, i) => ({
+    personalityIndex: i,
+    name: p.name,
+    goldAmount: p.goldAmount,
+    timerMinutes: p.timerMinutes,
+    disclaimer: p.disclaimer,
+    displayInitials: p.displayInitials,
   }))
 
   const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -75,6 +87,7 @@ export default async function TavernPage() {
         hoardBalance={hoard?.balance ?? 0}
         activeDuels={activeDuels}
         spectatableDuels={spectatableDuels}
+        botOptions={botOptions}
       />
     </>
   )
