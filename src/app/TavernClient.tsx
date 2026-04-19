@@ -10,6 +10,8 @@ import type { WagerWithUser, UserRow, SpectatableDuel } from '@/types/database'
 
 type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
 
+const PRACTICE_DISPLAY_COUNT = 8
+
 interface ActiveDuelInfo {
   id: string
   deadline: string
@@ -17,7 +19,7 @@ interface ActiveDuelInfo {
 }
 
 interface BotOption {
-  id: string
+  personalityIndex: number
   name: string
   goldAmount: number
   timerMinutes: number
@@ -74,38 +76,26 @@ function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
 function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
   const router = useRouter()
   return (
-    <div
-      className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all"
-      style={{ animationDelay: `${index * 60}ms` }}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+    <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all" style={{ animationDelay: `${index * 60}ms` }}>
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           <Avatar initials={duel.poster.display_initials} size="sm" />
-          <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1">Afoot</span>
+          <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1 whitespace-nowrap">Afoot</span>
         </div>
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
           <span className="font-mono text-[10px] text-[#888] block">gold</span>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{duel.poster.username}</p>
       <p className="font-mono text-[10px] text-[#888] mb-3">{duel.p1.username} vs {duel.p2.username}</p>
-      <button
-        onClick={() => router.push(`/spectate/${duel.duelId}`)}
-        className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:bg-[#f0ede6] transition-colors"
-      >
-        Spectate &rarr;
-      </button>
+      <button onClick={() => router.push(`/spectate/${duel.duelId}`)} className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:bg-[#f0ede6] transition-colors">Spectate &rarr;</button>
     </div>
   )
 }
 
 function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
-  wager: WagerWithUser
-  index: number
-  isNewest: boolean
-  currentUserId: string | null
-  isLoggedIn: boolean
+  wager: WagerWithUser; index: number; isNewest: boolean; currentUserId: string | null; isLoggedIn: boolean
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -119,31 +109,22 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
     challengingRef.current = true
     if (!isLoggedIn) { router.push('/login'); challengingRef.current = false; return }
     setLoading(true)
-    setStatusMsg('')
     try {
-      const res = await fetch('/api/accept-wager', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wagerId: wager.id }),
-      })
+      const res = await fetch('/api/accept-wager', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wagerId: wager.id }) })
       const data = await res.json()
       if (data.duelId) router.push(`/duel/${data.duelId}`)
       else alert(data.error || 'Could not accept wager')
-    } finally {
-      setLoading(false)
-      setStatusMsg('')
-      challengingRef.current = false
-    }
+    } finally { setLoading(false); setStatusMsg(''); challengingRef.current = false }
   }
 
   return (
     <div className={`bg-[#f5f3ea] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all ${isNewest ? 'border-2 border-[#1a1208]' : 'border border-[#d8d4cc]'}`} style={{ animationDelay: `${index * 60}ms` }}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           <Avatar initials={wager.users.display_initials} size="sm" />
-          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Open</span>
+          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Open</span>
         </div>
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
           <span className="font-mono text-[10px] text-[#888] block">gold</span>
         </div>
@@ -163,7 +144,7 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
   )
 }
 
-function BotCard({ bot, isLoggedIn }: { bot: BotOption; isLoggedIn: boolean }) {
+function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLoggedIn: boolean; onRotate: (idx: number) => void }) {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
 
@@ -177,34 +158,28 @@ function BotCard({ bot, isLoggedIn }: { bot: BotOption; isLoggedIn: boolean }) {
         if (error || !anonData.session) { alert(`Could not start practice: ${error?.message ?? 'no session'}`); return }
         headers['Authorization'] = `Bearer ${anonData.session.access_token}`
       }
-      const res = await fetch('/api/start-practice', {
-        method: 'POST', headers,
-        body: JSON.stringify({ botId: bot.id }),
-      })
+      const res = await fetch('/api/start-practice', { method: 'POST', headers, body: JSON.stringify({ personalityIndex: bot.personalityIndex }) })
       const data = await res.json()
-      if (data.duelId) window.location.href = `/duel/${data.duelId}`
+      if (data.duelId) { onRotate(bot.personalityIndex); window.location.href = `/duel/${data.duelId}` }
       else alert(data.error || 'Could not start practice')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
     <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           <Avatar initials={bot.displayInitials} size="sm" />
-          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Practice</span>
+          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Practice</span>
         </div>
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
           <span className="font-mono text-[10px] text-[#888] block">gold</span>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{bot.name}</p>
       <p className="font-mono text-[10px] text-[#888] mb-3">{bot.disclaimer}</p>
-      <button onClick={handlePractice} disabled={loading}
-        className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
+      <button onClick={handlePractice} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
         {loading ? 'Starting…' : 'Practice →'}
       </button>
     </div>
@@ -217,6 +192,32 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [displayedBotIndices, setDisplayedBotIndices] = useState<number[]>(
+    () => Array.from({ length: Math.min(PRACTICE_DISPLAY_COUNT, botOptions.length) }, (_, i) => i)
+  )
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('pact-bot-slots')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.every((n: unknown) => typeof n === 'number' && n < botOptions.length)) {
+          setDisplayedBotIndices(parsed.slice(0, PRACTICE_DISPLAY_COUNT))
+        }
+      }
+    } catch {}
+  }, [])
+
+  function rotateBotOut(personalityIndex: number) {
+    setDisplayedBotIndices(prev => {
+      const available = botOptions.map(b => b.personalityIndex).filter(i => !prev.includes(i))
+      if (!available.length) return prev
+      const replacement = available[Math.floor(Math.random() * available.length)]
+      const next = prev.map(i => i === personalityIndex ? replacement : i)
+      try { localStorage.setItem('pact-bot-slots', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   useEffect(() => {
     const channel = supabase
@@ -252,6 +253,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
   const newestId = filtered[0]?.id ?? null
   const isLoggedIn = !!currentUser
   const totalCards = spectatableDuels.length + filtered.length
+  const displayedBots = displayedBotIndices.map(i => botOptions[i]).filter(Boolean)
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -319,7 +321,9 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       <div className="mt-10">
         <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Practice<span className="cursor-blink ml-0.5">_</span></p>
         <div className="grid grid-cols-2 gap-3">
-          {botOptions.map(bot => <BotCard key={bot.id} bot={bot} isLoggedIn={isLoggedIn} />)}
+          {displayedBots.map(bot => (
+            <BotCard key={bot.personalityIndex} bot={bot} isLoggedIn={isLoggedIn} onRotate={rotateBotOut} />
+          ))}
         </div>
       </div>
 
