@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -19,15 +19,12 @@ function TimerBar({ deadline }: { deadline: string }) {
 
   useEffect(() => {
     function tick() {
-      const now = Date.now()
-      const end = new Date(deadline).getTime()
-      const remaining = Math.max(0, end - now)
+      const remaining = Math.max(0, new Date(deadline).getTime() - Date.now())
       const h = Math.floor(remaining / 3600000)
       const m = Math.floor((remaining % 3600000) / 60000)
       const s = Math.floor((remaining % 60000) / 1000)
       setLabel(h > 0 ? `${h}h ${m}m left` : m > 0 ? `${m}m ${s}s left` : `${s}s left`)
       setPct(Math.max(0, (remaining / (1000 * 60 * 60 * 24)) * 100))
-      if (remaining <= 0) setPct(0)
     }
     tick()
     const id = setInterval(tick, 1000)
@@ -44,10 +41,7 @@ function TimerBar({ deadline }: { deadline: string }) {
         </div>
       </div>
       <div className="h-0.5 bg-[#d8d4cc] rounded-full overflow-hidden">
-        <div
-          className="h-full bg-[#111] transition-all duration-1000 ease-linear"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-full bg-[#111] transition-all duration-1000 ease-linear" style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
@@ -66,95 +60,112 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const isP1 = currentUserId === duel.player1_id
-  const me = isP1 ? duel.player1 : duel.player2
   const opponent = isP1 ? duel.player2 : duel.player1
+  const opponentIsBot = !!(opponent as any).is_bot
 
-  // Restore decision from duel
   useEffect(() => {
     const saved = isP1 ? duel.player1_decision : duel.player2_decision
     if (saved) setDecision(saved as 'pledge' | 'betray')
   }, [])
 
-  // Realtime: messages
   useEffect(() => {
     const channel = supabase
       .channel(`duel-messages-${duel.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `duel_id=eq.${duel.id}`,
-      }, async (payload) => {
-        const { data } = await supabase
-          .from('messages')
-          .select('*, users(*)')
-          .eq('id', payload.new.id)
-          .single()
-        if (data) setMessages(prev => [...prev, data as MessageWithUser])
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `duel_id=eq.${duel.id}` },
+        async (payload) => {
+          const { data } = await supabase.from('messages').select('*, users(*)').eq('id', payload.new.id).single()
+          if (data) setMessages(prev => {
+            const optIdx = prev.findIndex(m =>
+              m.id.startsWith('opt-') &&
+              m.sender_id === (data as MessageWithUser).sender_id &&
+              m.content === (data as MessageWithUser).content
+            )
+            if (optIdx !== -1) {
+              const next = [...prev]
+              next[optIdx] = data as MessageWithUser
+              return next
+            }
+            return [...prev, data as MessageWithUser]
+          })
+        })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [duel.id])
 
-  // Realtime: duel state
   useEffect(() => {
     const channel = supabase
       .channel(`duel-state-${duel.id}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'duels',
-        filter: `id=eq.${duel.id}`,
-      }, (payload) => {
-        setLiveDuel(prev => ({ ...prev, ...payload.new }))
-        if (payload.new.status === 'completed') {
-          router.push(`/result/${duel.id}`)
-        }
-      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: `id=eq.${duel.id}` },
+        (payload) => {
+          setLiveDuel(prev => ({ ...prev, ...payload.new }))
+          if (payload.new.status === 'completed') router.push(`/result/${duel.id}`)
+        })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [duel.id])
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Raven nudge: 25% of timer elapsed, no opponent message
   useEffect(() => {
     const deadline = new Date(duel.deadline).getTime()
     const created = new Date(duel.created_at).getTime()
-    const total = deadline - created
-    const elapsed25 = created + total * 0.25
-    const now = Date.now()
-    const delay = Math.max(0, elapsed25 - now)
+    const elapsed25 = created + (deadline - created) * 0.25
+    const delay = Math.max(0, elapsed25 - Date.now())
     const opponentMessaged = isP1 ? liveDuel.player2_messaged : liveDuel.player1_messaged
-
-    if (!opponentMessaged) {
+    if (!opponentMessaged && !opponentIsBot) {
       const t = setTimeout(() => setShowRaven(true), delay)
       return () => clearTimeout(t)
     }
   }, [liveDuel.player1_messaged, liveDuel.player2_messaged])
 
-  const bothMessaged = liveDuel.player1_messaged && liveDuel.player2_messaged
+  useEffect(() => {
+    const delay = new Date(duel.deadline).getTime() - Date.now()
+    if (delay <= 0) { fetch('/api/resolve-duel', { method: 'POST' }); return }
+    const t = setTimeout(() => fetch('/api/resolve-duel', { method: 'POST' }), delay)
+    return () => clearTimeout(t)
+  }, [])
+
+  const myMessaged = isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged
+  const bothMessaged = opponentIsBot ? myMessaged : (liveDuel.player1_messaged && liveDuel.player2_messaged)
   const myDecision = isP1 ? liveDuel.player1_decision : liveDuel.player2_decision
   const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
   const canSeal = !!myDecision && opponentDecided
   const iHaveSealed = liveDuel.seal_requested_by === currentUserId
   const theyHaveSealed = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
+  const ravenAlreadySent = messages.some(m => m.content === '\u2014 a raven was sent \u2014')
 
   async function sendMessage() {
     if (!input.trim() || sending) return
     setSending(true)
     const content = input.trim()
     setInput('')
-    await supabase.from('messages').insert({
+
+    const myProfile = isP1 ? duel.player1 : duel.player2
+    setMessages(prev => [...prev, {
+      id: `opt-${Date.now()}`,
       duel_id: duel.id,
       sender_id: currentUserId,
       content,
-    })
+      created_at: new Date().toISOString(),
+      users: myProfile,
+    } as MessageWithUser])
+
     const field = isP1 ? 'player1_messaged' : 'player2_messaged'
-    await supabase.from('duels').update({ [field]: true }).eq('id', duel.id)
+    await Promise.all([
+      supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
+      supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
+    ])
+
+    if (opponentIsBot) {
+      fetch('/api/bot-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duelId: duel.id, botId: opponent.id }),
+      })
+    }
+
     setSending(false)
   }
 
@@ -163,6 +174,14 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     setDecision(d)
     const field = isP1 ? 'player1_decision' : 'player2_decision'
     await supabase.from('duels').update({ [field]: d }).eq('id', duel.id)
+  }
+
+  async function sendRaven() {
+    await supabase.from('messages').insert({
+      duel_id: duel.id,
+      sender_id: currentUserId,
+      content: '\u2014 a raven was sent \u2014',
+    })
   }
 
   async function requestSeal() {
@@ -179,16 +198,14 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
-      {/* Top bar */}
       <div className="px-4 py-3 border-b border-[#d8d4cc] flex items-center justify-between">
-        <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">← Back</Link>
+        <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">&larr; Back</Link>
         <span className="font-serif text-lg">The Duel</span>
         <span className="font-mono text-xs">
           <span className="text-amber-600">⬡</span> {duel.wagers.gold_amount} gold at stake
         </span>
       </div>
 
-      {/* VS strip */}
       <div className="bg-[#f2f0eb] border-b border-[#d8d4cc] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Avatar initials={duel.player1.display_initials} size="sm" />
@@ -201,44 +218,47 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </div>
       </div>
 
-      {/* Timer */}
       <TimerBar deadline={duel.deadline} />
 
-      {/* Raven nudge */}
-      {showRaven && (
-        <div className="mx-4 mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          <p className="font-mono text-[11px] text-amber-700">
-            🐦‍⬛ A raven circles overhead. Your opponent has not yet spoken.
-          </p>
+      {showRaven && !ravenAlreadySent && (
+        <div className="mx-4 mt-2">
+          <button
+            onClick={sendRaven}
+            className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:border-[#aaa] hover:text-[#111] transition-colors"
+          >
+            Send Raven ◈
+          </button>
         </div>
       )}
 
-      {/* Chat */}
+      {opponentIsBot && (
+        <div className="mx-4 mt-3 border border-[#d8d4cc] rounded-lg px-3 py-2">
+          <p className="font-mono text-[11px] text-[#888] text-center">Practice duel — no gold earned or lost</p>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 && (
-          <p className="text-center font-mono text-xs text-[#bbb] py-8">
-            The silence is deafening. Say something.
-          </p>
+          <p className="text-center font-mono text-xs text-[#bbb] py-8">The silence is deafening. Say something.</p>
         )}
         {messages.map((msg) => {
+          if (msg.content === '\u2014 a raven was sent \u2014') {
+            return (
+              <div key={msg.id} className="text-center py-1">
+                <span className="font-mono text-[10px] text-[#bbb] italic">{msg.content}</span>
+              </div>
+            )
+          }
           const isMine = msg.sender_id === currentUserId
           const sender = msg.sender_id === duel.player1_id ? duel.player1 : duel.player2
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
               <Avatar initials={sender.display_initials} size="sm" />
               <div className={`max-w-[70%] ${isMine ? 'bubble-in-right' : 'bubble-in-left'}`}>
-                <p className={`font-mono text-[10px] mb-1 ${isMine ? 'text-right' : ''} text-[#888]`}>
-                  {sender.username}
-                </p>
-                <div
-                  className={`px-3 py-2 rounded-2xl font-sans text-sm ${
-                    isMine
-                      ? 'bg-[#111] text-white rounded-br-sm'
-                      : 'bg-[#f0ede6] text-[#111] rounded-bl-sm'
-                  }`}
-                >
-                  {msg.content}
-                </div>
+                <p className={`font-mono text-[10px] mb-1 ${isMine ? 'text-right' : ''} text-[#888]`}>{sender.username}</p>
+                <div className={`px-3 py-2 rounded-2xl font-sans text-sm ${
+                  isMine ? 'bg-[#111] text-white rounded-br-sm' : 'bg-[#f0ede6] text-[#111] rounded-bl-sm'
+                }`}>{msg.content}</div>
               </div>
             </div>
           )
@@ -246,92 +266,68 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         <div ref={bottomRef} />
       </div>
 
-      {/* Message input */}
       <div className="px-4 py-3 border-t border-[#d8d4cc] flex gap-2">
         <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
+          type="text" value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && sendMessage()}
-          placeholder="Say something…"
+          placeholder="Say something\u2026"
           className="flex-1 border border-[#d8d4cc] rounded-lg px-3 py-2 bg-[#faf9f7] font-sans text-sm focus:outline-none focus:border-[#aaa]"
         />
-        <button
-          onClick={sendMessage}
-          disabled={sending || !input.trim()}
-          className="bg-[#111] text-white font-sans text-sm px-4 py-2 rounded-lg disabled:opacity-40 hover:bg-[#333] transition-colors"
-        >
+        <button onClick={sendMessage} disabled={sending || !input.trim()}
+          className="bg-[#111] text-white font-sans text-sm px-4 py-2 rounded-lg disabled:opacity-40 hover:bg-[#333] transition-colors">
           Send
         </button>
       </div>
 
-      {/* Decision area */}
-      <div className="px-4 py-4 border-t border-[#d8d4cc] bg-white">
+      <div className="px-4 pt-4 pb-2 border-t border-[#d8d4cc] bg-white">
         {!bothMessaged && (
           <p className="font-mono text-[10px] text-[#888] text-center mb-3 uppercase tracking-widest">
-            Both must speak before deciding
+            {opponentIsBot ? 'Send a message to unlock your decision' : 'Both must speak before deciding'}
           </p>
         )}
         <div className="flex gap-3">
-          <button
-            onClick={() => makeDecision('pledge')}
-            disabled={!bothMessaged}
+          <button onClick={() => makeDecision('pledge')} disabled={!bothMessaged}
             className={`flex-1 py-3 rounded-xl border-2 font-sans text-sm font-medium transition-all ${
               !bothMessaged ? 'opacity-30 cursor-not-allowed border-[#d8d4cc] text-[#888]'
-              : decision === 'pledge'
-                ? 'border-[#3B6D11] bg-[#3B6D11]/10 text-[#3B6D11]'
-                : 'border-[#d8d4cc] hover:border-[#3B6D11] hover:text-[#3B6D11]'
-            }`}
-          >
-            Pledge
-          </button>
-          <button
-            onClick={() => makeDecision('betray')}
-            disabled={!bothMessaged}
+              : decision === 'pledge' ? 'border-[#3B6D11] bg-[#3B6D11]/10 text-[#3B6D11]'
+              : 'border-[#d8d4cc] hover:border-[#3B6D11] hover:text-[#3B6D11]'
+            }`}>Pledge</button>
+          <button onClick={() => makeDecision('betray')} disabled={!bothMessaged}
             className={`flex-1 py-3 rounded-xl border-2 font-sans text-sm font-medium transition-all ${
               !bothMessaged ? 'opacity-30 cursor-not-allowed border-[#d8d4cc] text-[#888]'
-              : decision === 'betray'
-                ? 'border-[#993C1D] bg-[#993C1D]/10 text-[#993C1D]'
-                : 'border-[#d8d4cc] hover:border-[#993C1D] hover:text-[#993C1D]'
-            }`}
-          >
-            Betray
-          </button>
+              : decision === 'betray' ? 'border-[#993C1D] bg-[#993C1D]/10 text-[#993C1D]'
+              : 'border-[#d8d4cc] hover:border-[#993C1D] hover:text-[#993C1D]'
+            }`}>Betray</button>
         </div>
 
         {canSeal && (
-          <div className="mt-3">
+          <div className="flex justify-center mt-4">
             {iHaveSealed ? (
-              // I already sealed — show waiting state
-              <div className="w-full border border-[#d8d4cc] rounded-xl py-2.5 font-mono text-xs tracking-widest uppercase text-center text-[#aaa]">
-                Your seal is placed — awaiting opponent
+              <div className="w-[72px] h-[72px] rounded-full border border-[#d8d4cc] flex flex-col items-center justify-center font-mono text-[8px] tracking-wider uppercase text-[#aaa] text-center leading-snug">
+                <span>Seal</span><span>placed</span>
               </div>
             ) : theyHaveSealed ? (
-              // Opponent sealed first — prompt me to confirm
-              <>
-                <div className="text-center font-mono text-[11px] text-[#3B6D11] mb-2">
-                  Your opponent has sealed. Add your seal to reveal.
-                </div>
-                <button
-                  onClick={requestSeal}
-                  disabled={sealLoading}
-                  className="w-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 rounded-xl py-2.5 font-mono text-xs tracking-widest uppercase hover:bg-[#3B6D11] hover:text-white transition-colors text-[#3B6D11]"
-                >
-                  {sealLoading ? 'Sealing…' : 'Confirm Seal'}
+              <div className="text-center">
+                <p className="font-mono text-[11px] text-[#3B6D11] mb-2">Opponent sealed. Confirm below.</p>
+                <button onClick={requestSeal} disabled={sealLoading}
+                  className="w-[72px] h-[72px] rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex flex-col items-center justify-center font-mono text-[8px] tracking-wider uppercase hover:bg-[#3B6D11] hover:text-white transition-colors text-[#3B6D11] mx-auto leading-snug">
+                  {sealLoading ? <span className="text-sm">…</span> : <><span>Confirm</span><span>Seal</span></>}
                 </button>
-              </>
+              </div>
             ) : (
-              // Neither has sealed yet
-              <button
-                onClick={requestSeal}
-                disabled={sealLoading}
-                className="w-full border border-[#111] rounded-xl py-2.5 font-mono text-xs tracking-widest uppercase hover:bg-[#111] hover:text-white transition-colors"
-              >
-                {sealLoading ? 'Sealing…' : 'The Seal — Reveal Now'}
+              <button onClick={requestSeal} disabled={sealLoading}
+                className="w-[72px] h-[72px] rounded-full border border-[#111] flex flex-col items-center justify-center font-mono text-[8px] tracking-wider uppercase hover:bg-[#111] hover:text-white transition-colors disabled:opacity-40 leading-snug">
+                {sealLoading ? <span className="text-sm">…</span> : <><span>Invoke</span><span>The Seal</span></>}
               </button>
             )}
           </div>
         )}
+
+        <div className="mt-4 pt-3 border-t border-[#f0ede6] grid grid-cols-3 divide-x divide-[#f0ede6] text-center">
+          <p className="font-mono text-[9px] text-[#bbb] px-1 leading-tight">both pledge → +25% each</p>
+          <p className="font-mono text-[9px] text-[#bbb] px-1 leading-tight">one betrays → winner takes all</p>
+          <p className="font-mono text-[9px] text-[#bbb] px-1 leading-tight">both betray → house keeps it</p>
+        </div>
       </div>
     </div>
   )
