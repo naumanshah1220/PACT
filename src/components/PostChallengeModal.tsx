@@ -15,6 +15,8 @@ const TIMER_OPTIONS = [
   { label: '24h', value: 1440 },
 ]
 
+const MAX_MESSAGE = 100
+
 interface Props {
   currentUser: UserRow
   onClose: () => void
@@ -28,6 +30,7 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
   const [gold, setGold] = useState(Math.min(5, maxWager))
   const [timerIdx, setTimerIdx] = useState(2)
   const [spectatorsAllowed, setSpectatorsAllowed] = useState(true)
+  const [wagerMessage, setWagerMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -42,6 +45,7 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
         goldAmount: gold,
         timerMinutes: TIMER_OPTIONS[timerIdx].value,
         spectatorsAllowed,
+        wagerMessage: wagerMessage.trim() || null,
       }),
     })
     const data = await res.json()
@@ -59,9 +63,7 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
         </div>
 
         <div className="mb-5">
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">
-            Wager Amount
-          </label>
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">Wager Amount</label>
           <div className="flex items-center gap-3">
             <input
               type="range" min={1} max={maxWager} value={gold}
@@ -70,15 +72,11 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
             />
             <span className="font-fell text-2xl w-12 text-right">{gold}</span>
           </div>
-          <p className="font-mono text-[10px] text-[#888] mt-1">
-            Balance: {currentUser.gold_balance} &middot; Max: {maxWager}
-          </p>
+          <p className="font-mono text-[10px] text-[#888] mt-1">Balance: {currentUser.gold_balance} &middot; Max: {maxWager}</p>
         </div>
 
         <div className="mb-5">
-          <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">
-            Chat Timer
-          </label>
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">Chat Timer</label>
           <div className="grid grid-cols-4 gap-1.5">
             {TIMER_OPTIONS.map((t, i) => (
               <button
@@ -88,11 +86,23 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
                     ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]'
                     : 'bg-white text-[#444] border-[#d8d4cc] hover:bg-[#f0ede6]'
                 }`}
-              >
-                {t.label}
-              </button>
+              >{t.label}</button>
             ))}
           </div>
+        </div>
+
+        <div className="mb-5">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">
+            Your Pitch <span className="normal-case text-[#bbb]">(optional)</span>
+          </label>
+          <textarea
+            value={wagerMessage}
+            onChange={e => setWagerMessage(e.target.value.slice(0, MAX_MESSAGE))}
+            placeholder="Why should they trust you…"
+            rows={2}
+            className="w-full border border-[#d8d4cc] rounded-lg px-3 py-2 bg-white font-mono text-[11px] focus:outline-none focus:border-[#aaa] resize-none"
+          />
+          <p className="font-mono text-[10px] text-[#bbb] text-right mt-0.5">{wagerMessage.length}/{MAX_MESSAGE}</p>
         </div>
 
         <div className="mb-6">
@@ -107,9 +117,7 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
                 spectatorsAllowed ? 'ml-[18px]' : 'ml-[3px]'
               }`} />
             </div>
-            <span className="font-mono text-[11px] text-[#888]">
-              Allow spectators to observe this duel
-            </span>
+            <span className="font-mono text-[11px] text-[#888]">Allow spectators to observe this duel</span>
           </label>
         </div>
 

@@ -59,6 +59,7 @@ export interface Database {
           status: 'open' | 'active' | 'completed' | 'cancelled'
           spectators_allowed: boolean
           practice: boolean
+          wager_message: string | null
           created_at: string
         }
         Insert: {
@@ -69,6 +70,7 @@ export interface Database {
           status?: 'open' | 'active' | 'completed' | 'cancelled'
           spectators_allowed?: boolean
           practice?: boolean
+          wager_message?: string | null
           created_at?: string
         }
         Update: {
@@ -79,6 +81,7 @@ export interface Database {
           status?: 'open' | 'active' | 'completed' | 'cancelled'
           spectators_allowed?: boolean
           practice?: boolean
+          wager_message?: string | null
           created_at?: string
         }
       }
@@ -130,79 +133,19 @@ export interface Database {
         }
       }
       messages: {
-        Row: {
-          id: string
-          duel_id: string
-          sender_id: string
-          content: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          duel_id: string
-          sender_id: string
-          content: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          duel_id?: string
-          sender_id?: string
-          content?: string
-          created_at?: string
-        }
+        Row: { id: string; duel_id: string; sender_id: string; content: string; created_at: string }
+        Insert: { id?: string; duel_id: string; sender_id: string; content: string; created_at?: string }
+        Update: { id?: string; duel_id?: string; sender_id?: string; content?: string; created_at?: string }
       }
       alms_donations: {
-        Row: {
-          id: string
-          donor_id: string
-          recipient_id: string
-          gold_amount: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          donor_id: string
-          recipient_id: string
-          gold_amount: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          donor_id?: string
-          recipient_id?: string
-          gold_amount?: number
-          created_at?: string
-        }
+        Row: { id: string; donor_id: string; recipient_id: string; gold_amount: number; created_at: string }
+        Insert: { id?: string; donor_id: string; recipient_id: string; gold_amount: number; created_at?: string }
+        Update: { id?: string; donor_id?: string; recipient_id?: string; gold_amount?: number; created_at?: string }
       }
       alms_requests: {
-        Row: {
-          id: string
-          requester_id: string
-          gold_amount: number
-          message: string | null
-          status: 'open' | 'fulfilled' | 'cancelled'
-          fulfilled_by: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          requester_id: string
-          gold_amount: number
-          message?: string | null
-          status?: 'open' | 'fulfilled' | 'cancelled'
-          fulfilled_by?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          requester_id?: string
-          gold_amount?: number
-          message?: string | null
-          status?: 'open' | 'fulfilled' | 'cancelled'
-          fulfilled_by?: string | null
-          created_at?: string
-        }
+        Row: { id: string; requester_id: string; gold_amount: number; message: string | null; status: 'open' | 'fulfilled' | 'cancelled'; fulfilled_by: string | null; created_at: string }
+        Insert: { id?: string; requester_id: string; gold_amount: number; message?: string | null; status?: 'open' | 'fulfilled' | 'cancelled'; fulfilled_by?: string | null; created_at?: string }
+        Update: { id?: string; requester_id?: string; gold_amount?: number; message?: string | null; status?: 'open' | 'fulfilled' | 'cancelled'; fulfilled_by?: string | null; created_at?: string }
       }
       hoard: {
         Row: { id: string; balance: number }
@@ -210,27 +153,9 @@ export interface Database {
         Update: { id?: string; balance?: number }
       }
       hoard_announcements: {
-        Row: {
-          id: string
-          message: string
-          gold_added: number
-          dismissed: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          message: string
-          gold_added?: number
-          dismissed?: boolean
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          message?: string
-          gold_added?: number
-          dismissed?: boolean
-          created_at?: string
-        }
+        Row: { id: string; message: string; gold_added: number; dismissed: boolean; created_at: string }
+        Insert: { id?: string; message: string; gold_added?: number; dismissed?: boolean; created_at?: string }
+        Update: { id?: string; message?: string; gold_added?: number; dismissed?: boolean; created_at?: string }
       }
     }
     Views: { [_ in never]: never }

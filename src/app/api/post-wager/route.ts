@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { goldAmount, timerMinutes, spectatorsAllowed } = await req.json()
+  const { goldAmount, timerMinutes, spectatorsAllowed, wagerMessage } = await req.json()
 
   const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     timer_minutes: timerMinutes,
     status: 'open',
     spectators_allowed: spectatorsAllowed ?? false,
+    wager_message: wagerMessage ?? null,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
