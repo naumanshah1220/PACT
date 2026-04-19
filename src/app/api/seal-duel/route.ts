@@ -18,23 +18,24 @@ export async function POST(req: Request) {
   if (duel.status !== 'active')
     return NextResponse.json({ error: 'Duel not active' }, { status: 400 })
 
-  // Must have made a decision before sealing
   const myDecision = duel.player1_id === user.id ? duel.player1_decision : duel.player2_decision
   if (!myDecision)
     return NextResponse.json({ error: 'Choose pledge or betray first' }, { status: 400 })
 
-  // First seal: record who sealed first
+  // Practice (bot) duels: resolve immediately when human seals — no waiting
+  if (duel.wagers.practice) {
+    await resolveOutcome(duelId, admin)
+    return NextResponse.json({ resolved: true })
+  }
+
   if (!duel.seal_requested_by) {
     await admin.from('duels').update({ seal_requested_by: user.id }).eq('id', duelId)
     return NextResponse.json({ sealRequested: true })
   }
 
-  // Same player clicking again — still waiting
-  if (duel.seal_requested_by === user.id) {
+  if (duel.seal_requested_by === user.id)
     return NextResponse.json({ waiting: true })
-  }
 
-  // Second seal — both players have now sealed, resolve the duel
   await resolveOutcome(duelId, admin)
   return NextResponse.json({ resolved: true })
 }
