@@ -4,16 +4,9 @@ import TavernClient from './TavernClient'
 import PactHeader from '@/components/PactHeader'
 import BanBanner from '@/components/BanBanner'
 import type { SpectatableDuel } from '@/types/database'
-import { BOT_IDS, BOT_CONFIG } from '@/lib/bots'
+import { BOT_PERSONALITIES } from '@/lib/bots'
 
 export const revalidate = 0
-
-const BOT_INITIALS: Record<string, string> = {
-  [BOT_IDS.MERCIFUL_FRIAR]: 'MF',
-  [BOT_IDS.CUTPURSE]: 'CP',
-  [BOT_IDS.MERCHANT]: 'ME',
-  [BOT_IDS.ORACLE]: 'OR',
-}
 
 export default async function TavernPage() {
   const supabase = await createClient()
@@ -26,7 +19,6 @@ export default async function TavernPage() {
     .order('created_at', { ascending: false })
     .limit(60)
 
-  // Strip bot wagers — bots are now per-user on-demand via dedicated cards
   const wagers = (wagersRaw ?? []).filter((w: any) => !w.users?.is_bot)
 
   const { data: activeDuelRaw } = await supabase
@@ -47,13 +39,13 @@ export default async function TavernPage() {
     p2: d.player2,
   }))
 
-  const botOptions = Object.entries(BOT_CONFIG).map(([id, cfg]) => ({
-    id,
-    name: cfg.name,
-    goldAmount: cfg.goldAmount,
-    timerMinutes: cfg.timerMinutes,
-    disclaimer: cfg.disclaimer,
-    displayInitials: BOT_INITIALS[id] ?? 'BO',
+  const botOptions = BOT_PERSONALITIES.map((p, i) => ({
+    personalityIndex: i,
+    name: p.name,
+    goldAmount: p.goldAmount,
+    timerMinutes: p.timerMinutes,
+    disclaimer: p.disclaimer,
+    displayInitials: p.displayInitials,
   }))
 
   const { data: { user: authUser } } = await supabase.auth.getUser()

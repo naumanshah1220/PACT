@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
-import { BOT_CONFIG, getBotDecision, isBotId } from '@/lib/bots'
+import { BOT_PERSONALITIES, STRATEGY_BOT_IDS, getBotDecision } from '@/lib/bots'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -16,13 +16,13 @@ export async function POST(req: Request) {
   }
   if (!user) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
 
-  const { botId } = await req.json()
-  if (!isBotId(botId)) return NextResponse.json({ error: 'Invalid bot' }, { status: 400 })
+  const { personalityIndex } = await req.json()
+  const personality = BOT_PERSONALITIES[personalityIndex]
+  if (!personality) return NextResponse.json({ error: 'Invalid bot' }, { status: 400 })
 
   const admin = createAdminClient()
-  const cfg = BOT_CONFIG[botId]
+  const botId = STRATEGY_BOT_IDS[personality.strategy]
 
-  // Ensure profile exists for anonymous users
   const { data: existing } = await admin.from('users').select('id').eq('id', user.id).single()
   if (!existing) {
     const guestNum = Math.floor(Math.random() * 9000) + 1000
@@ -36,14 +36,13 @@ export async function POST(req: Request) {
     })
   }
 
-  const decision = getBotDecision(cfg.strategy)
-  const deadline = new Date(Date.now() + cfg.timerMinutes * 60 * 1000).toISOString()
+  const decision = getBotDecision(personality.strategy)
+  const deadline = new Date(Date.now() + personality.timerMinutes * 60 * 1000).toISOString()
 
-  // Create wager directly as active — never enters the public open pool
   const { data: wager, error: wagerErr } = await admin.from('wagers').insert({
     poster_id: botId,
-    gold_amount: cfg.goldAmount,
-    timer_minutes: cfg.timerMinutes,
+    gold_amount: personality.goldAmount,
+    timer_minutes: personality.timerMinutes,
     status: 'active',
     practice: true,
     spectators_allowed: false,
@@ -64,7 +63,7 @@ export async function POST(req: Request) {
   await admin.from('messages').insert({
     duel_id: duel.id,
     sender_id: botId,
-    content: cfg.greeting,
+    content: personality.greeting,
   })
 
   return NextResponse.json({ duelId: duel.id })
