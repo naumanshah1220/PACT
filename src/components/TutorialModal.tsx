@@ -4,69 +4,79 @@ import { useEffect, useRef, useState } from 'react'
 
 function TavernSVG() {
   return (
-    <svg width="96" height="80" viewBox="0 0 96 80" fill="none">
-      <path d="M16 76 L16 36 Q16 8 48 8 Q80 8 80 36 L80 76" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round"/>
-      <rect x="36" y="46" width="24" height="30" rx="12" fill="#1a1208" opacity="0.85"/>
-      <circle cx="22" cy="34" r="4" fill="none" stroke="#c9a227" strokeWidth="1.5"/>
-      <line x1="22" y1="28" x2="22" y2="30" stroke="#c9a227" strokeWidth="1.5" strokeLinecap="round"/>
-      <circle cx="74" cy="34" r="4" fill="none" stroke="#c9a227" strokeWidth="1.5"/>
-      <line x1="74" y1="28" x2="74" y2="30" stroke="#c9a227" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="36" y1="76" x2="60" y2="76" stroke="#1a1208" strokeWidth="1.5"/>
+    <svg width="130" height="100" viewBox="0 0 130 100" fill="none">
+      <path d="M20 96 L20 44 Q20 10 65 10 Q110 10 110 44 L110 96" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
+      <rect x="48" y="58" width="34" height="38" rx="17" fill="#1a1208" opacity="0.85"/>
+      <circle cx="30" cy="42" r="6" fill="none" stroke="#c9a227" strokeWidth="1.5"/>
+      <line x1="30" y1="34" x2="30" y2="36" stroke="#c9a227" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="100" cy="42" r="6" fill="none" stroke="#c9a227" strokeWidth="1.5"/>
+      <line x1="100" y1="34" x2="100" y2="36" stroke="#c9a227" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M38 58 Q65 52 92 58" stroke="#1a1208" strokeWidth="1" opacity="0.3"/>
+      <path d="M48 96 L82 96" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M30 96 L20 96" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M100 96 L110 96" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
 }
 
 function WagerSVG() {
   return (
-    <svg width="96" height="80" viewBox="0 0 96 80" fill="none">
-      <rect x="20" y="46" width="56" height="6" rx="3" fill="#d8d4cc"/>
-      <line x1="30" y1="52" x2="30" y2="68" stroke="#d8d4cc" strokeWidth="2"/>
-      <line x1="66" y1="52" x2="66" y2="68" stroke="#d8d4cc" strokeWidth="2"/>
-      <circle cx="48" cy="40" r="10" fill="#fdf6d8" stroke="#c9a227" strokeWidth="1.5"/>
-      <path d="M44 40 L48 36 L52 40 L48 44 Z" fill="#c9a227" stroke="none"/>
-      <path d="M4 60 Q16 50 30 42" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M92 60 Q80 50 66 42" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg width="130" height="100" viewBox="0 0 130 100" fill="none">
+      <rect x="25" y="58" width="80" height="8" rx="4" fill="#d8d4cc"/>
+      <rect x="35" y="66" width="10" height="22" rx="2" fill="#d8d4cc"/>
+      <rect x="85" y="66" width="10" height="22" rx="2" fill="#d8d4cc"/>
+      <circle cx="65" cy="50" r="16" fill="#fdf6d8" stroke="#c9a227" strokeWidth="2"/>
+      <path d="M58 50 L65 42 L72 50 L65 58 Z" fill="#c9a227"/>
+      <path d="M4 74 Q18 62 36 52" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M126 74 Q112 62 94 52" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M6 82 L18 76" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+      <path d="M124 82 L112 76" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
     </svg>
   )
 }
 
 function SpeakSVG() {
   return (
-    <svg width="96" height="80" viewBox="0 0 96 80" fill="none">
-      <path d="M8 12 Q8 4 16 4 L44 4 Q52 4 52 12 L52 26 Q52 34 44 34 L22 34 L10 46 L14 34 Q8 34 8 26 Z" stroke="#1a1208" strokeWidth="1.5" fill="#f5f3ea"/>
-      <line x1="18" y1="15" x2="38" y2="15" stroke="#1a1208" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
-      <line x1="18" y1="22" x2="30" y2="22" stroke="#1a1208" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
-      <path d="M88 34 Q88 26 80 26 L52 26 Q44 26 44 34 L44 48 Q44 56 52 56 L74 56 L86 68 L82 56 Q88 56 88 48 Z" stroke="#1a1208" strokeWidth="1.5" fill="#f5f3ea"/>
-      <line x1="56" y1="37" x2="76" y2="37" stroke="#1a1208" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
-      <line x1="56" y1="44" x2="66" y2="44" stroke="#1a1208" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
+    <svg width="130" height="100" viewBox="0 0 130 100" fill="none">
+      <path d="M8 14 Q8 4 18 4 L60 4 Q70 4 70 14 L70 34 Q70 44 60 44 L28 44 L12 60 L18 44 Q8 44 8 34 Z" stroke="#1a1208" strokeWidth="1.5" fill="#f5f0e0"/>
+      <line x1="20" y1="18" x2="54" y2="18" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
+      <line x1="20" y1="26" x2="42" y2="26" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
+      <line x1="20" y1="34" x2="50" y2="34" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
+      <path d="M122 46 Q122 36 112 36 L70 36 Q60 36 60 46 L60 66 Q60 76 70 76 L100 76 L118 92 L114 76 Q122 76 122 66 Z" stroke="#1a1208" strokeWidth="1.5" fill="#f5f0e0"/>
+      <line x1="74" y1="50" x2="108" y2="50" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
+      <line x1="74" y1="58" x2="96" y2="58" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
+      <line x1="74" y1="66" x2="104" y2="66" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
     </svg>
   )
 }
 
 function ForkSVG() {
   return (
-    <svg width="96" height="80" viewBox="0 0 96 80" fill="none">
-      <line x1="48" y1="76" x2="48" y2="48" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M48 48 Q36 36 16 14" stroke="#3B6D11" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M48 48 Q60 36 80 14" stroke="#993C1D" strokeWidth="2" strokeLinecap="round" strokeDasharray="5 3"/>
-      <circle cx="16" cy="11" r="7" fill="#3B6D11"/>
-      <circle cx="80" cy="11" r="7" fill="#993C1D"/>
-      <path d="M13 11 L19 11 M16 8 L16 14" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M77 11 L83 11" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg width="130" height="100" viewBox="0 0 130 100" fill="none">
+      <line x1="65" y1="96" x2="65" y2="58" stroke="#1a1208" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M65 58 Q50 44 22 16" stroke="#3B6D11" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M65 58 Q80 44 108 16" stroke="#993C1D" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="6 4"/>
+      <circle cx="22" cy="13" r="10" fill="#3B6D11"/>
+      <circle cx="108" cy="13" r="10" fill="#993C1D"/>
+      <path d="M18 13 L26 13 M22 9 L22 17" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M104 13 L112 13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+      <text x="34" y="38" fill="#3B6D11" fontSize="8" fontFamily="monospace" opacity="0.8">PLEDGE</text>
+      <text x="78" y="38" fill="#993C1D" fontSize="8" fontFamily="monospace" opacity="0.8">BETRAY</text>
     </svg>
   )
 }
 
 function SealSVG() {
   return (
-    <svg width="96" height="80" viewBox="0 0 96 80" fill="none">
-      <rect x="40" y="2" width="16" height="18" rx="5" fill="#1a1208"/>
-      <rect x="42" y="18" width="12" height="6" fill="#1a1208"/>
-      <circle cx="48" cy="54" r="24" stroke="#1a1208" strokeWidth="1.5"/>
-      <circle cx="48" cy="54" r="16" stroke="#1a1208" strokeWidth="1"/>
-      <line x1="48" y1="42" x2="48" y2="66" stroke="#1a1208" strokeWidth="1" opacity="0.4"/>
-      <line x1="36" y1="54" x2="60" y2="54" stroke="#1a1208" strokeWidth="1" opacity="0.4"/>
-      <path d="M48 30 L48 34 M48 74 L48 78 M24 54 L28 54 M68 54 L72 54" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
+    <svg width="130" height="110" viewBox="0 0 130 110" fill="none">
+      <rect x="52" y="2" width="26" height="24" rx="7" fill="#1a1208"/>
+      <rect x="56" y="24" width="18" height="8" fill="#1a1208"/>
+      <circle cx="65" cy="72" r="34" stroke="#1a1208" strokeWidth="2"/>
+      <circle cx="65" cy="72" r="24" stroke="#1a1208" strokeWidth="1"/>
+      <line x1="65" y1="52" x2="65" y2="92" stroke="#1a1208" strokeWidth="1" opacity="0.35"/>
+      <line x1="45" y1="72" x2="85" y2="72" stroke="#1a1208" strokeWidth="1" opacity="0.35"/>
+      <path d="M65 38 L65 44 M65 100 L65 106 M31 72 L37 72 M93 72 L99 72" stroke="#1a1208" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M43 50 L47 54 M83 90 L87 94 M43 94 L47 90 M83 50 L87 54" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
     </svg>
   )
 }
@@ -79,7 +89,7 @@ const SLIDES = [
   },
   {
     title: 'Post or Accept a Wager',
-    body: 'Put gold at stake and wait for a challenger, or step up and accept someone else\'s. You risk it. So do they.',
+    body: 'Put gold at stake and wait for a challenger — or step up and accept someone else\'s. You risk it. So do they.',
     Illustration: WagerSVG,
   },
   {
@@ -102,7 +112,10 @@ const SLIDES = [
 export default function TutorialModal() {
   const [open, setOpen] = useState(false)
   const [slide, setSlide] = useState(0)
+  const [dir, setDir] = useState(0) // -1 = going left, 1 = going right
+  const [animating, setAnimating] = useState(false)
   const touchStartX = useRef<number | null>(null)
+  const pointerStartX = useRef<number | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -117,86 +130,136 @@ export default function TutorialModal() {
   useEffect(() => {
     if (!open) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'ArrowRight') goNext()
-      if (e.key === 'ArrowLeft') goPrev()
+      if (e.key === 'ArrowRight') navigate(1)
+      if (e.key === 'ArrowLeft') navigate(-1)
       if (e.key === 'Escape') close()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, slide])
+  }, [open, slide, animating])
 
   function close() {
     localStorage.setItem('pact-tutorial-seen', '1')
     setOpen(false)
   }
 
-  function goNext() {
-    if (slide < SLIDES.length - 1) setSlide(s => s + 1)
-    else close()
-  }
-
-  function goPrev() {
-    if (slide > 0) setSlide(s => s - 1)
+  function navigate(direction: number) {
+    if (animating) return
+    const next = slide + direction
+    if (next < 0 || next >= SLIDES.length) return
+    setDir(direction)
+    setAnimating(true)
+    setTimeout(() => {
+      setSlide(next)
+      setAnimating(false)
+    }, 280)
   }
 
   if (!open) return null
 
   const { title, body, Illustration } = SLIDES[slide]
+  const isLast = slide === SLIDES.length - 1
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-6 sm:pb-0"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
       onClick={close}
     >
+      {/* Scroll container */}
       <div
-        className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[20px] w-full max-w-sm p-6 relative shadow-xl"
+        className="relative w-full max-w-md"
         onClick={e => e.stopPropagation()}
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={e => {
           if (touchStartX.current === null) return
           const dx = e.changedTouches[0].clientX - touchStartX.current
-          if (dx < -50) goNext()
-          else if (dx > 50) goPrev()
+          if (Math.abs(dx) > 40) navigate(dx < 0 ? 1 : -1)
           touchStartX.current = null
         }}
+        onPointerDown={e => { pointerStartX.current = e.clientX }}
+        onPointerUp={e => {
+          if (pointerStartX.current === null) return
+          const dx = e.clientX - pointerStartX.current
+          if (Math.abs(dx) > 40) navigate(dx < 0 ? 1 : -1)
+          pointerStartX.current = null
+        }}
       >
-        <button
-          onClick={close}
-          className="absolute top-4 right-5 font-mono text-xl text-[#bbb] hover:text-[#444] transition-colors leading-none"
-        >×</button>
-
-        <div className="flex justify-center mb-5 mt-1">
-          <Illustration />
+        {/* Top scroll rod */}
+        <div className="h-7 rounded-t-md shadow-lg relative z-10 flex items-center px-6" style={{ background: 'linear-gradient(180deg, #a07830 0%, #7a5820 50%, #9a7030 100%)' }}>
+          <div className="w-full h-2 rounded-full opacity-40" style={{ background: 'linear-gradient(180deg, #c9a050, #5a3a10)' }} />
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[#5a3a10]" style={{ backgroundColor: '#b87828' }} />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[#5a3a10]" style={{ backgroundColor: '#b87828' }} />
         </div>
 
-        <h2 className="font-fell text-2xl text-center mb-2 text-[#1a1208]">{title}</h2>
-        <p className="font-mono text-[11px] text-[#777] text-center leading-relaxed mb-6">{body}</p>
-
-        <div className="flex justify-center gap-2 mb-5">
-          {SLIDES.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setSlide(i)}
-              className={`h-1.5 rounded-full transition-all duration-200 ${
-                i === slide ? 'bg-[#1a1208] w-5' : 'bg-[#d8d4cc] w-1.5'
-              }`}
-            />
-          ))}
-        </div>
-
-        <div className="flex gap-2">
+        {/* Parchment body */}
+        <div
+          className="relative overflow-hidden px-8 pt-8 pb-6 select-none"
+          style={{
+            background: 'linear-gradient(180deg, #fdf6e0 0%, #faf0d0 40%, #fdf6e0 100%)',
+            boxShadow: 'inset 0 0 40px rgba(160,120,40,0.08)',
+          }}
+        >
+          {/* Dismiss */}
           <button
-            onClick={goPrev}
-            className={`py-2.5 font-mono text-[11px] border border-[#d8d4cc] rounded-xl transition-colors hover:bg-[#f0ede6] flex-1 ${
-              slide === 0 ? 'invisible pointer-events-none' : ''
-            }`}
-          >← Back</button>
-          <button
-            onClick={goNext}
-            className="flex-1 bg-[#1a1208] text-[#EEEDE4] py-2.5 font-mono text-[11px] rounded-xl hover:opacity-90 transition-opacity"
+            onClick={close}
+            className="absolute top-3 right-4 font-mono text-2xl leading-none transition-colors"
+            style={{ color: '#c8a060' }}
+          >×</button>
+
+          {/* Slide content with transition */}
+          <div
+            className="transition-all duration-[280ms] ease-in-out"
+            style={{
+              opacity: animating ? 0 : 1,
+              transform: animating
+                ? `translateX(${dir < 0 ? '30px' : '-30px'})`
+                : 'translateX(0)',
+            }}
           >
-            {slide === SLIDES.length - 1 ? 'Enter the Tavern' : 'Next →'}
-          </button>
+            <div className="flex justify-center mb-6">
+              <Illustration />
+            </div>
+
+            <div className="text-center mb-6">
+              <h2 className="font-fell mb-3" style={{ fontSize: '1.7rem', color: '#1a1208', lineHeight: 1.1 }}>{title}</h2>
+              <p className="font-mono text-[12px] leading-relaxed" style={{ color: '#6b5030' }}>{body}</p>
+            </div>
+          </div>
+
+          {/* Dots */}
+          <div className="flex justify-center gap-2.5 mb-5">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { if (i !== slide) navigate(i > slide ? 1 : -1) }}
+                className="h-1.5 rounded-full transition-all duration-200"
+                style={{
+                  width: i === slide ? 20 : 6,
+                  backgroundColor: i === slide ? '#8B6914' : '#d4b878',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Final CTA or swipe hint */}
+          {isLast ? (
+            <button
+              onClick={close}
+              className="w-full py-3 font-mono text-[12px] tracking-widest uppercase rounded-lg transition-opacity hover:opacity-80"
+              style={{ backgroundColor: '#1a1208', color: '#fdf6e0' }}
+            >
+              Enter the Tavern
+            </button>
+          ) : (
+            <p className="text-center font-mono text-[10px] tracking-widest uppercase" style={{ color: '#c8a060', opacity: 0.7 }}>swipe to continue</p>
+          )}
+        </div>
+
+        {/* Bottom scroll rod */}
+        <div className="h-7 rounded-b-md shadow-lg relative z-10 flex items-center px-6" style={{ background: 'linear-gradient(0deg, #a07830 0%, #7a5820 50%, #9a7030 100%)' }}>
+          <div className="w-full h-2 rounded-full opacity-40" style={{ background: 'linear-gradient(180deg, #c9a050, #5a3a10)' }} />
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[#5a3a10]" style={{ backgroundColor: '#b87828' }} />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-[#5a3a10]" style={{ backgroundColor: '#b87828' }} />
         </div>
       </div>
     </div>
