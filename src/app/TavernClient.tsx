@@ -8,12 +8,23 @@ import Avatar from '@/components/Avatar'
 import PostChallengeModal from '@/components/PostChallengeModal'
 import type { WagerWithUser, UserRow, SpectatableDuel } from '@/types/database'
 
-type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long' | 'practice'
+type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
+
+const PRACTICE_DISPLAY_COUNT = 8
 
 interface ActiveDuelInfo {
   id: string
   deadline: string
   opponent: { username: string; display_initials: string }
+}
+
+interface BotOption {
+  personalityIndex: number
+  name: string
+  goldAmount: number
+  timerMinutes: number
+  disclaimer: string
+  displayInitials: string
 }
 
 interface Props {
@@ -22,6 +33,7 @@ interface Props {
   hoardBalance: number
   activeDuels: ActiveDuelInfo[]
   spectatableDuels: SpectatableDuel[]
+  botOptions: BotOption[]
 }
 
 function timeAgo(ts: string) {
@@ -56,26 +68,36 @@ function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
         <Avatar initials={info.opponent.display_initials} size="sm" />
         <span className="font-fell text-sm">vs {info.opponent.username}</span>
       </div>
-      <p className="font-mono text-[10px] text-[#888] mt-2 text-right">Enter duel room →</p>
+      <p className="font-mono text-[10px] text-[#888] mt-2 text-right">Enter duel room &rarr;</p>
     </Link>
   )
 }
 
-function SpectatableCard({ duel }: { duel: SpectatableDuel }) {
+function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
   const router = useRouter()
   return (
-    <div onClick={() => router.push(`/spectate/${duel.duelId}`)} className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-amber-700">● Afoot</span>
-        <span className="font-mono text-[10px] text-[#888]"><span className="text-amber-600">⬡</span> {duel.goldAmount}</span>
+    <div
+      className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          <Avatar initials={duel.poster.display_initials} size="sm" />
+          <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1 whitespace-nowrap">Afoot</span>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
+          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        </div>
       </div>
-      <div className="flex items-center gap-1.5">
-        <Avatar initials={duel.p1.display_initials} size="sm" />
-        <span className="font-mono text-[10px] text-[#888]">vs</span>
-        <Avatar initials={duel.p2.display_initials} size="sm" />
-        <span className="font-fell text-sm ml-1">{duel.p1.username} vs {duel.p2.username}</span>
-      </div>
-      <p className="font-mono text-[10px] text-[#888] mt-2 text-right">Observe →</p>
+      <p className="font-fell text-sm mb-1">{duel.poster.username}</p>
+      <p className="font-mono text-[10px] text-[#888] mb-3">{duel.p1.username} vs {duel.p2.username}</p>
+      <button
+        onClick={() => router.push(`/spectate/${duel.duelId}`)}
+        className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:bg-[#f0ede6] transition-colors"
+      >
+        Spectate &rarr;
+      </button>
     </div>
   )
 }
@@ -93,29 +115,14 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
   const [statusMsg, setStatusMsg] = useState('')
   const challengingRef = useRef(false)
   const isOwn = currentUserId === wager.users.id
-  const isPractice = wager.practice === true || wager.users.is_bot === true
 
   async function handleChallenge() {
     if (challengingRef.current) return
     challengingRef.current = true
-    if (!isLoggedIn && !isPractice) { router.push('/login'); challengingRef.current = false; return }
+    if (!isLoggedIn) { router.push('/login'); challengingRef.current = false; return }
     setLoading(true)
     setStatusMsg('')
     try {
-      if (!isLoggedIn && isPractice) {
-        setStatusMsg('Starting session…')
-        const { data: anonData, error } = await supabase.auth.signInAnonymously()
-        if (error || !anonData.session) { alert(`Could not start practice session: ${error?.message ?? 'no session'}`); return }
-        const res = await fetch('/api/accept-wager', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anonData.session.access_token}` },
-          body: JSON.stringify({ wagerId: wager.id }),
-        })
-        const data = await res.json()
-        if (data.duelId) window.location.href = `/duel/${data.duelId}`
-        else alert(data.error || 'Could not accept wager')
-        return
-      }
       const res = await fetch('/api/accept-wager', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,12 +140,12 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
 
   return (
     <div className={`bg-[#f5f3ea] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all ${isNewest ? 'border-2 border-[#1a1208]' : 'border border-[#d8d4cc]'}`} style={{ animationDelay: `${index * 60}ms` }}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           <Avatar initials={wager.users.display_initials} size="sm" />
-          {isPractice && <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Practice</span>}
+          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Open</span>
         </div>
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
           <span className="font-mono text-[10px] text-[#888] block">gold</span>
         </div>
@@ -147,30 +154,109 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
       <p className="font-mono text-[10px] text-[#888] mb-3">posted {timeAgo(wager.created_at)} &middot; timer: {formatTimer(wager.timer_minutes)}</p>
       {isOwn ? (
         <div className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#bbb] text-center uppercase tracking-widest">Awaiting challenger</div>
-      ) : !isLoggedIn && !isPractice ? (
-        <Link href="/login" className="block w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] text-center hover:bg-[#f0ede6] transition-colors">Sign in to challenge →</Link>
+      ) : !isLoggedIn ? (
+        <Link href="/login" className="block w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] text-center hover:bg-[#f0ede6] transition-colors">Sign in to challenge &rarr;</Link>
       ) : (
         <button onClick={handleChallenge} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
-          {loading ? (statusMsg || 'Starting…') : isPractice ? 'Practice →' : 'Challenge →'}
+          {loading ? (statusMsg || 'Starting…') : 'Challenge →'}
         </button>
       )}
     </div>
   )
 }
 
-export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels, spectatableDuels }: Props) {
+function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLoggedIn: boolean; onRotate: (idx: number) => void }) {
+  const supabase = createClient()
+  const [loading, setLoading] = useState(false)
+
+  async function handlePractice() {
+    if (loading) return
+    setLoading(true)
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (!isLoggedIn) {
+        const { data: anonData, error } = await supabase.auth.signInAnonymously()
+        if (error || !anonData.session) { alert(`Could not start practice: ${error?.message ?? 'no session'}`); return }
+        headers['Authorization'] = `Bearer ${anonData.session.access_token}`
+      }
+      const res = await fetch('/api/start-practice', {
+        method: 'POST', headers,
+        body: JSON.stringify({ personalityIndex: bot.personalityIndex }),
+      })
+      const data = await res.json()
+      if (data.duelId) {
+        onRotate(bot.personalityIndex)
+        window.location.href = `/duel/${data.duelId}`
+      } else {
+        alert(data.error || 'Could not start practice')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all">
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          <Avatar initials={bot.displayInitials} size="sm" />
+          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Practice</span>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
+          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        </div>
+      </div>
+      <p className="font-fell text-sm mb-1">{bot.name}</p>
+      <p className="font-mono text-[10px] text-[#888] mb-3">{bot.disclaimer}</p>
+      <button onClick={handlePractice} disabled={loading}
+        className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
+        {loading ? 'Starting…' : 'Practice →'}
+      </button>
+    </div>
+  )
+}
+
+export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels, spectatableDuels, botOptions }: Props) {
   const supabase = createClient()
   const [wagers, setWagers] = useState<WagerWithUser[]>(initialWagers)
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [displayedBotIndices, setDisplayedBotIndices] = useState<number[]>(
+    () => Array.from({ length: Math.min(PRACTICE_DISPLAY_COUNT, botOptions.length) }, (_, i) => i)
+  )
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('pact-bot-slots')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.every((n: unknown) => typeof n === 'number' && n < botOptions.length)) {
+          setDisplayedBotIndices(parsed.slice(0, PRACTICE_DISPLAY_COUNT))
+        }
+      }
+    } catch {}
+  }, [])
+
+  function rotateBotOut(personalityIndex: number) {
+    setDisplayedBotIndices(prev => {
+      const allIndices = botOptions.map(b => b.personalityIndex)
+      const available = allIndices.filter(i => !prev.includes(i))
+      if (!available.length) return prev
+      const replacement = available[Math.floor(Math.random() * available.length)]
+      const next = prev.map(i => i === personalityIndex ? replacement : i)
+      try { localStorage.setItem('pact-bot-slots', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   useEffect(() => {
     const channel = supabase
       .channel('tavern-wagers')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wagers' }, async (payload) => {
         const { data } = await supabase.from('wagers').select('*, users(*)').eq('id', payload.new.id).single()
-        if (data) setWagers(prev => [data as WagerWithUser, ...prev])
+        if (data && !(data as any).users?.is_bot) setWagers(prev => [data as WagerWithUser, ...prev])
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wagers' }, (payload) => {
         if (payload.new.status !== 'open') setWagers(prev => prev.filter(w => w.id !== payload.new.id))
@@ -191,7 +277,6 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       case '50plus': return w.filter(x => x.gold_amount > 50)
       case 'quick': return w.filter(x => x.timer_minutes < 60)
       case 'long': return w.filter(x => x.timer_minutes >= 720)
-      case 'practice': return w.filter(x => x.practice === true || x.users.is_bot === true)
       default: return w
     }
   }, [wagers, filter, search])
@@ -199,6 +284,8 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
   const isFiltered = filter !== 'all' || search.trim() !== ''
   const newestId = filtered[0]?.id ?? null
   const isLoggedIn = !!currentUser
+  const totalCards = spectatableDuels.length + filtered.length
+  const displayedBots = displayedBotIndices.map(i => botOptions[i]).filter(Boolean)
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -207,7 +294,6 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     { key: '50plus', label: '50+' },
     { key: 'quick', label: 'Quick (<1h)' },
     { key: 'long', label: 'Long (12h+)' },
-    { key: 'practice', label: 'Practice' },
   ]
 
   return (
@@ -231,15 +317,6 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         </div>
       )}
 
-      {spectatableDuels.length > 0 && (
-        <div className="mb-5">
-          <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-3">Duels in Progress</p>
-          <div className="grid grid-cols-2 gap-3">
-            {spectatableDuels.map(d => <SpectatableCard key={d.duelId} duel={d} />)}
-          </div>
-        </div>
-      )}
-
       <div className="sticky top-[57px] z-40 bg-[#EEEDE4] pb-3 pt-1">
         <input type="text" placeholder="Search by player name…" value={search} onChange={e => setSearch(e.target.value)} className="w-full border border-[#d8d4cc] rounded-lg px-3 py-2 bg-[#f5f3ea] font-mono text-[11px] mb-2 focus:outline-none focus:border-[#aaa]" />
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -249,21 +326,38 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         </div>
       </div>
 
-      <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Open Challenges<span className="cursor-blink ml-0.5">_</span></p>
+      <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Challenges<span className="cursor-blink ml-0.5">_</span></p>
 
-      {filtered.length === 0 ? (
-        <div className="text-center py-20"><p className="font-mono text-sm text-[#888]">No challenges found.</p></div>
+      {totalCards === 0 ? (
+        <div className="text-center py-12"><p className="font-mono text-sm text-[#888]">No open challenges.</p></div>
       ) : isFiltered || filtered.length < 4 ? (
         <div className="grid grid-cols-2 gap-3">
-          {filtered.map((w, i) => <WagerCard key={w.id} wager={w} index={i} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
+          {spectatableDuels.map((d, i) => <AFootCard key={d.duelId} duel={d} index={i} />)}
+          {filtered.map((w, i) => <WagerCard key={w.id} wager={w} index={spectatableDuels.length + i} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
         </div>
       ) : (
-        <div className="tavern-scroll-container h-[560px]">
-          <div className="tavern-scroll-track grid grid-cols-2 gap-3">
-            {[...filtered, ...filtered, ...filtered].map((w, i) => <WagerCard key={`${w.id}-${i}`} wager={w} index={i % filtered.length} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
+        <>
+          {spectatableDuels.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {spectatableDuels.map((d, i) => <AFootCard key={d.duelId} duel={d} index={i} />)}
+            </div>
+          )}
+          <div className="tavern-scroll-container h-[560px]">
+            <div className="tavern-scroll-track grid grid-cols-2 gap-3">
+              {[...filtered, ...filtered, ...filtered].map((w, i) => <WagerCard key={`${w.id}-${i}`} wager={w} index={i % filtered.length} isNewest={w.id === newestId} currentUserId={currentUser?.id ?? null} isLoggedIn={isLoggedIn} />)}
+            </div>
           </div>
-        </div>
+        </>
       )}
+
+      <div className="mt-10">
+        <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Practice<span className="cursor-blink ml-0.5">_</span></p>
+        <div className="grid grid-cols-2 gap-3">
+          {displayedBots.map(bot => (
+            <BotCard key={bot.personalityIndex} bot={bot} isLoggedIn={isLoggedIn} onRotate={rotateBotOut} />
+          ))}
+        </div>
+      </div>
 
       <div className="mt-10 flex gap-4 justify-center">
         {[{ href: '/nobles', label: 'Nobles' }, { href: '/honors', label: 'Honors' }, { href: '/alms', label: 'Alms' }].map(l => (
