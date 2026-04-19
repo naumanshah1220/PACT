@@ -8,12 +8,21 @@ import Avatar from '@/components/Avatar'
 import PostChallengeModal from '@/components/PostChallengeModal'
 import type { WagerWithUser, UserRow, SpectatableDuel } from '@/types/database'
 
-type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long' | 'practice'
+type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
 
 interface ActiveDuelInfo {
   id: string
   deadline: string
   opponent: { username: string; display_initials: string }
+}
+
+interface BotOption {
+  id: string
+  name: string
+  goldAmount: number
+  timerMinutes: number
+  disclaimer: string
+  displayInitials: string
 }
 
 interface Props {
@@ -22,6 +31,7 @@ interface Props {
   hoardBalance: number
   activeDuels: ActiveDuelInfo[]
   spectatableDuels: SpectatableDuel[]
+  botOptions: BotOption[]
 }
 
 function timeAgo(ts: string) {
@@ -63,8 +73,6 @@ function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
 
 function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
   const router = useRouter()
-  const isPractice = duel.practice === true
-
   return (
     <div
       className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all"
@@ -74,7 +82,6 @@ function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
         <div className="flex items-center gap-2">
           <Avatar initials={duel.poster.display_initials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1">Afoot</span>
-          {isPractice && <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Practice</span>}
         </div>
         <div className="text-right">
           <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
@@ -106,29 +113,14 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
   const [statusMsg, setStatusMsg] = useState('')
   const challengingRef = useRef(false)
   const isOwn = currentUserId === wager.users.id
-  const isPractice = wager.practice === true || wager.users.is_bot === true
 
   async function handleChallenge() {
     if (challengingRef.current) return
     challengingRef.current = true
-    if (!isLoggedIn && !isPractice) { router.push('/login'); challengingRef.current = false; return }
+    if (!isLoggedIn) { router.push('/login'); challengingRef.current = false; return }
     setLoading(true)
     setStatusMsg('')
     try {
-      if (!isLoggedIn && isPractice) {
-        setStatusMsg('Starting session…')
-        const { data: anonData, error } = await supabase.auth.signInAnonymously()
-        if (error || !anonData.session) { alert(`Could not start practice session: ${error?.message ?? 'no session'}`); return }
-        const res = await fetch('/api/accept-wager', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${anonData.session.access_token}` },
-          body: JSON.stringify({ wagerId: wager.id }),
-        })
-        const data = await res.json()
-        if (data.duelId) window.location.href = `/duel/${data.duelId}`
-        else alert(data.error || 'Could not accept wager')
-        return
-      }
       const res = await fetch('/api/accept-wager', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -150,7 +142,6 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
         <div className="flex items-center gap-2">
           <Avatar initials={wager.users.display_initials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Open</span>
-          {isPractice && <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Practice</span>}
         </div>
         <div className="text-right">
           <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
@@ -161,18 +152,66 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
       <p className="font-mono text-[10px] text-[#888] mb-3">posted {timeAgo(wager.created_at)} &middot; timer: {formatTimer(wager.timer_minutes)}</p>
       {isOwn ? (
         <div className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#bbb] text-center uppercase tracking-widest">Awaiting challenger</div>
-      ) : !isLoggedIn && !isPractice ? (
+      ) : !isLoggedIn ? (
         <Link href="/login" className="block w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] text-center hover:bg-[#f0ede6] transition-colors">Sign in to challenge &rarr;</Link>
       ) : (
         <button onClick={handleChallenge} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
-          {loading ? (statusMsg || 'Starting…') : isPractice ? 'Practice →' : 'Challenge →'}
+          {loading ? (statusMsg || 'Starting…') : 'Challenge →'}
         </button>
       )}
     </div>
   )
 }
 
-export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels, spectatableDuels }: Props) {
+function BotCard({ bot, isLoggedIn }: { bot: BotOption; isLoggedIn: boolean }) {
+  const supabase = createClient()
+  const [loading, setLoading] = useState(false)
+
+  async function handlePractice() {
+    if (loading) return
+    setLoading(true)
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (!isLoggedIn) {
+        const { data: anonData, error } = await supabase.auth.signInAnonymously()
+        if (error || !anonData.session) { alert(`Could not start practice: ${error?.message ?? 'no session'}`); return }
+        headers['Authorization'] = `Bearer ${anonData.session.access_token}`
+      }
+      const res = await fetch('/api/start-practice', {
+        method: 'POST', headers,
+        body: JSON.stringify({ botId: bot.id }),
+      })
+      const data = await res.json()
+      if (data.duelId) window.location.href = `/duel/${data.duelId}`
+      else alert(data.error || 'Could not start practice')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Avatar initials={bot.displayInitials} size="sm" />
+          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1">Practice</span>
+        </div>
+        <div className="text-right">
+          <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
+          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        </div>
+      </div>
+      <p className="font-fell text-sm mb-1">{bot.name}</p>
+      <p className="font-mono text-[10px] text-[#888] mb-3">{bot.disclaimer}</p>
+      <button onClick={handlePractice} disabled={loading}
+        className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
+        {loading ? 'Starting…' : 'Practice →'}
+      </button>
+    </div>
+  )
+}
+
+export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels, spectatableDuels, botOptions }: Props) {
   const supabase = createClient()
   const [wagers, setWagers] = useState<WagerWithUser[]>(initialWagers)
   const [filter, setFilter] = useState<FilterType>('all')
@@ -184,7 +223,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       .channel('tavern-wagers')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wagers' }, async (payload) => {
         const { data } = await supabase.from('wagers').select('*, users(*)').eq('id', payload.new.id).single()
-        if (data) setWagers(prev => [data as WagerWithUser, ...prev])
+        if (data && !(data as any).users?.is_bot) setWagers(prev => [data as WagerWithUser, ...prev])
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wagers' }, (payload) => {
         if (payload.new.status !== 'open') setWagers(prev => prev.filter(w => w.id !== payload.new.id))
@@ -205,7 +244,6 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       case '50plus': return w.filter(x => x.gold_amount > 50)
       case 'quick': return w.filter(x => x.timer_minutes < 60)
       case 'long': return w.filter(x => x.timer_minutes >= 720)
-      case 'practice': return w.filter(x => x.practice === true || x.users.is_bot === true)
       default: return w
     }
   }, [wagers, filter, search])
@@ -222,7 +260,6 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     { key: '50plus', label: '50+' },
     { key: 'quick', label: 'Quick (<1h)' },
     { key: 'long', label: 'Long (12h+)' },
-    { key: 'practice', label: 'Practice' },
   ]
 
   return (
@@ -258,7 +295,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Challenges<span className="cursor-blink ml-0.5">_</span></p>
 
       {totalCards === 0 ? (
-        <div className="text-center py-20"><p className="font-mono text-sm text-[#888]">No challenges found.</p></div>
+        <div className="text-center py-12"><p className="font-mono text-sm text-[#888]">No open challenges.</p></div>
       ) : isFiltered || filtered.length < 4 ? (
         <div className="grid grid-cols-2 gap-3">
           {spectatableDuels.map((d, i) => <AFootCard key={d.duelId} duel={d} index={i} />)}
@@ -278,6 +315,13 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
           </div>
         </>
       )}
+
+      <div className="mt-10">
+        <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Practice<span className="cursor-blink ml-0.5">_</span></p>
+        <div className="grid grid-cols-2 gap-3">
+          {botOptions.map(bot => <BotCard key={bot.id} bot={bot} isLoggedIn={isLoggedIn} />)}
+        </div>
+      </div>
 
       <div className="mt-10 flex gap-4 justify-center">
         {[{ href: '/nobles', label: 'Nobles' }, { href: '/honors', label: 'Honors' }, { href: '/alms', label: 'Alms' }].map(l => (

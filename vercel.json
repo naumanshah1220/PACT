@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/bot-wager?secret=REPLACE_WITH_BOT_CRON_SECRET",
-      "schedule": "0 9 * * *"
-    }
-  ]
-}
+{}
