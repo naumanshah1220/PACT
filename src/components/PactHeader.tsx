@@ -17,6 +17,14 @@ export default function PactHeader() {
     })
   }, [])
 
+  function openTutorial() {
+    if (window.location.pathname === '/') {
+      window.dispatchEvent(new CustomEvent('open-tutorial'))
+    } else {
+      window.location.href = '/?tutorial=1'
+    }
+  }
+
   return (
     <header className="border-b border-[#D4CCBA] sticky top-0 z-50" style={{ backgroundColor: '#EEEDE4' }}>
       <div className="max-w-2xl mx-auto px-4 py-3">
@@ -32,6 +40,12 @@ export default function PactHeader() {
           </Link>
 
           <nav className="flex items-center gap-3">
+            <button
+              onClick={openTutorial}
+              className="w-7 h-7 rounded-full border border-[#D4CCBA] flex items-center justify-center font-mono text-xs text-[#aaa] hover:text-[#555] hover:border-[#aaa] transition-colors"
+              title="How to play"
+            >?</button>
+
             {user ? (
               <>
                 <Link
