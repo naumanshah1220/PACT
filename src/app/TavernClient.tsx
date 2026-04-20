@@ -15,8 +15,9 @@ type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
 type ViewMode = 'list' | 'map'
 
 const PRACTICE_DISPLAY_COUNT = 8
-const CARD_W = 240
-const GRID_COLS = 3
+const CARD_W = 260
+const GRID_COLS = 4
+const MAP_HEIGHT = 600
 
 interface ActiveDuelInfo {
   id: string
@@ -106,7 +107,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     }, 50)
   }
 
-  useEffect(() => { setGridPos({ x: 0, y: 0 }) }, [filter, search])
+  useEffect(() => { setGridPos({ x: 0, y: 0 }) }, [filter, search, viewMode])
 
   useEffect(() => {
     try {
@@ -154,7 +155,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  const filtered = useMemo(() => {
+  const filteredWagers = useMemo(() => {
     let w = wagers
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -170,15 +171,47 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     }
   }, [wagers, filter, search])
 
-  const newestId = filtered[0]?.id ?? null
-  const isLoggedIn = !!currentUser
-  const totalCards = spectatableDuels.length + filtered.length
   const displayedBots = displayedBotIndices.map(i => botOptions[i]).filter(Boolean)
-  const allCards = [
-    ...spectatableDuels.map(d => ({ type: 'afoot' as const, data: d })),
-    ...filtered.map(w => ({ type: 'wager' as const, data: w })),
+
+  const filteredBots = useMemo(() => {
+    let b = displayedBots
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      b = b.filter(x => x.name.toLowerCase().includes(q))
+    }
+    switch (filter) {
+      case 'under10': return b.filter(x => x.goldAmount < 10)
+      case '10to50': return b.filter(x => x.goldAmount >= 10 && x.goldAmount <= 50)
+      case '50plus': return b.filter(x => x.goldAmount > 50)
+      case 'quick': return b.filter(x => x.timerMinutes < 60)
+      case 'long': return b.filter(x => x.timerMinutes >= 720)
+      default: return b
+    }
+  }, [displayedBots, filter, search])
+
+  const filteredSpectatable = useMemo(() => {
+    if (!search.trim()) return spectatableDuels
+    const q = search.trim().toLowerCase()
+    return spectatableDuels.filter(d =>
+      d.poster.username.toLowerCase().includes(q) ||
+      d.p1.username.toLowerCase().includes(q) ||
+      d.p2.username.toLowerCase().includes(q)
+    )
+  }, [spectatableDuels, search])
+
+  const newestId = filteredWagers[0]?.id ?? null
+  const isLoggedIn = !!currentUser
+
+  const listCards = [
+    ...filteredSpectatable.map(d => ({ type: 'afoot' as const, data: d })),
+    ...filteredWagers.map(w => ({ type: 'wager' as const, data: w })),
   ]
-  const hasOverflow = allCards.length > GRID_COLS
+
+  const mapCards = [
+    ...filteredSpectatable.map(d => ({ type: 'afoot' as const, data: d })),
+    ...filteredWagers.map(w => ({ type: 'wager' as const, data: w })),
+    ...filteredBots.map(b => ({ type: 'bot' as const, data: b })),
+  ]
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -213,7 +246,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       )}
 
       <div className="sticky top-[57px] z-40 bg-[#EEEDE4] pb-3 pt-1">
-        <input type="text" placeholder="Search by player name…" value={search} onChange={e => setSearch(e.target.value)} className="w-full border border-[#d8d4cc] rounded-lg px-3 py-2 bg-[#f5f3ea] font-mono text-[11px] mb-2 focus:outline-none focus:border-[#aaa]" />
+        <input type="text" placeholder="Search by name…" value={search} onChange={e => setSearch(e.target.value)} className="w-full border border-[#d8d4cc] rounded-lg px-3 py-2 bg-[#f5f3ea] font-mono text-[11px] mb-2 focus:outline-none focus:border-[#aaa]" />
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {filters.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)} className={`whitespace-nowrap font-mono text-[11px] px-3 py-1 rounded-full border transition-colors ${filter === f.key ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'}`}>{f.label}</button>
@@ -222,7 +255,9 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <p className="font-mono text-[11px] tracking-widest uppercase text-[#888]">Challenges<span className="cursor-blink ml-0.5">_</span></p>
+        <p className="font-mono text-[11px] tracking-widest uppercase text-[#888]">
+          {viewMode === 'map' ? 'Tavern map' : 'Challenges'}<span className="cursor-blink ml-0.5">_</span>
+        </p>
         <div className="flex gap-1">
           <button onClick={() => setView('list')} className={`px-2.5 py-1 font-mono text-[10px] rounded border transition-colors ${viewMode === 'list' ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'}`}>List</button>
           <button onClick={() => setView('map')} className={`px-2.5 py-1 font-mono text-[10px] rounded border transition-colors ${viewMode === 'map' ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'}`}>Map</button>
@@ -231,11 +266,11 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
 
       {viewMode === 'list' ? (
         <div className="space-y-3">
-          {allCards.length === 0 ? (
+          {listCards.length === 0 ? (
             <div className="py-20 text-center">
               <p className="font-mono text-sm text-[#888]">No open challenges.</p>
             </div>
-          ) : allCards.map(card =>
+          ) : listCards.map(card =>
             card.type === 'afoot' ? (
               <AFootCard key={card.data.duelId} duel={card.data} />
             ) : (
@@ -252,31 +287,38 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
       ) : (
         <div
           ref={containerRef}
-          className={`relative overflow-hidden rounded-[12px] select-none touch-none ${totalCards === 0 ? '' : 'cursor-grab active:cursor-grabbing'}`}
-          style={{ height: totalCards === 0 ? 'auto' : 460 }}
-          onPointerDown={totalCards > 0 ? onGrabDown : undefined}
-          onPointerMove={totalCards > 0 ? onGrabMove : undefined}
-          onPointerUp={totalCards > 0 ? onGrabUp : undefined}
-          onPointerCancel={totalCards > 0 ? onGrabUp : undefined}
+          className={`relative overflow-hidden rounded-[12px] border border-[#d8d4cc] select-none touch-none ${mapCards.length === 0 ? '' : 'cursor-grab active:cursor-grabbing'}`}
+          style={{
+            height: mapCards.length === 0 ? 'auto' : MAP_HEIGHT,
+            backgroundColor: '#eae6da',
+            backgroundImage: 'radial-gradient(circle, #d8d4cc 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+          onPointerDown={mapCards.length > 0 ? onGrabDown : undefined}
+          onPointerMove={mapCards.length > 0 ? onGrabMove : undefined}
+          onPointerUp={mapCards.length > 0 ? onGrabUp : undefined}
+          onPointerCancel={mapCards.length > 0 ? onGrabUp : undefined}
         >
-          {totalCards === 0 ? (
+          {mapCards.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="font-mono text-sm text-[#888]">No open challenges.</p>
+              <p className="font-mono text-sm text-[#888]">Nothing matches your filters.</p>
             </div>
           ) : (
             <>
               <div
                 ref={innerRef}
-                className="absolute p-2 grid gap-3"
+                className="absolute p-4 grid gap-4"
                 style={{
                   gridTemplateColumns: `repeat(${GRID_COLS}, ${CARD_W}px)`,
                   transform: `translate(${gridPos.x}px, ${gridPos.y}px)`,
                   willChange: 'transform',
                 }}
               >
-                {allCards.map(card =>
+                {mapCards.map(card =>
                   card.type === 'afoot' ? (
                     <AFootCard key={card.data.duelId} duel={card.data} />
+                  ) : card.type === 'bot' ? (
+                    <BotCard key={`bot-${card.data.personalityIndex}`} bot={card.data} isLoggedIn={isLoggedIn} onRotate={rotateBotOut} />
                   ) : (
                     <WagerCard
                       key={(card.data as WagerWithUser).id}
@@ -288,26 +330,28 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
                   )
                 )}
               </div>
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-l from-[#EEEDE4] to-transparent" />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#EEEDE4] to-transparent" />
-              {hasOverflow && (
-                <div className="pointer-events-none absolute bottom-2 inset-x-0 flex justify-center">
-                  <span className="font-mono text-[9px] text-[#bbb] uppercase tracking-widest">drag to explore</span>
-                </div>
-              )}
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-[#EEEDE4] to-transparent" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#EEEDE4] to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#EEEDE4] to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#EEEDE4] to-transparent" />
+              <div className="pointer-events-none absolute bottom-2 inset-x-0 flex justify-center">
+                <span className="font-mono text-[9px] text-[#888] uppercase tracking-widest bg-[#EEEDE4]/80 px-2 py-0.5 rounded">drag to explore</span>
+              </div>
             </>
           )}
         </div>
       )}
 
-      <div className="mt-10">
-        <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Practice<span className="cursor-blink ml-0.5">_</span></p>
-        <div className="grid grid-cols-2 gap-3">
-          {displayedBots.map(bot => (
-            <BotCard key={bot.personalityIndex} bot={bot} isLoggedIn={isLoggedIn} onRotate={rotateBotOut} />
-          ))}
+      {viewMode === 'list' && (
+        <div className="mt-10">
+          <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Practice<span className="cursor-blink ml-0.5">_</span></p>
+          <div className="grid grid-cols-2 gap-3">
+            {displayedBots.map(bot => (
+              <BotCard key={bot.personalityIndex} bot={bot} isLoggedIn={isLoggedIn} onRotate={rotateBotOut} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-10 flex gap-4 justify-center">
         {[{ href: '/nobles', label: 'Nobles' }, { href: '/honors', label: 'Honors' }, { href: '/alms', label: 'Alms' }].map(l => (
