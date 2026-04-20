@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 function TavernSVG() {
   return (
-    <svg width="160" height="120" viewBox="0 0 130 100" fill="none">
+    <svg width="200" height="150" viewBox="0 0 130 100" fill="none">
       <path d="M20 96 L20 44 Q20 10 65 10 Q110 10 110 44 L110 96" stroke="#1a1208" strokeWidth="2" strokeLinecap="round"/>
       <rect x="48" y="58" width="34" height="38" rx="17" fill="#1a1208" opacity="0.85"/>
       <circle cx="30" cy="42" r="6" fill="none" stroke="#c9a227" strokeWidth="1.5"/>
@@ -21,7 +21,7 @@ function TavernSVG() {
 
 function WagerSVG() {
   return (
-    <svg width="160" height="120" viewBox="0 0 130 100" fill="none">
+    <svg width="200" height="150" viewBox="0 0 130 100" fill="none">
       <rect x="25" y="58" width="80" height="8" rx="4" fill="#d8d4cc"/>
       <rect x="35" y="66" width="10" height="22" rx="2" fill="#d8d4cc"/>
       <rect x="85" y="66" width="10" height="22" rx="2" fill="#d8d4cc"/>
@@ -37,7 +37,7 @@ function WagerSVG() {
 
 function SpeakSVG() {
   return (
-    <svg width="160" height="120" viewBox="0 0 130 100" fill="none">
+    <svg width="200" height="150" viewBox="0 0 130 100" fill="none">
       <path d="M8 14 Q8 4 18 4 L60 4 Q70 4 70 14 L70 34 Q70 44 60 44 L28 44 L12 60 L18 44 Q8 44 8 34 Z" stroke="#1a1208" strokeWidth="1.5" fill="#e8e4d8"/>
       <line x1="20" y1="18" x2="54" y2="18" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
       <line x1="20" y1="26" x2="42" y2="26" stroke="#1a1208" strokeWidth="1.5" strokeLinecap="round" opacity="0.35"/>
@@ -52,7 +52,7 @@ function SpeakSVG() {
 
 function ForkSVG() {
   return (
-    <svg width="160" height="120" viewBox="0 0 130 100" fill="none">
+    <svg width="200" height="150" viewBox="0 0 130 100" fill="none">
       <line x1="65" y1="96" x2="65" y2="58" stroke="#1a1208" strokeWidth="2.5" strokeLinecap="round"/>
       <path d="M65 58 Q50 44 22 16" stroke="#3B6D11" strokeWidth="2.5" strokeLinecap="round"/>
       <path d="M65 58 Q80 44 108 16" stroke="#993C1D" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="6 4"/>
@@ -68,7 +68,7 @@ function ForkSVG() {
 
 function SealSVG() {
   return (
-    <svg width="160" height="130" viewBox="0 0 130 110" fill="none">
+    <svg width="200" height="160" viewBox="0 0 130 110" fill="none">
       <rect x="52" y="2" width="26" height="24" rx="7" fill="#1a1208"/>
       <rect x="56" y="24" width="18" height="8" fill="#1a1208"/>
       <circle cx="65" cy="72" r="34" stroke="#1a1208" strokeWidth="2"/>
@@ -84,12 +84,12 @@ function SealSVG() {
 const SLIDES = [
   {
     title: 'Welcome to PACT',
-    body: 'A game of trust and gold, played between strangers. Every wager is a test of character — and nerve.',
+    body: 'A game of trust and gold, played between strangers. Every wager is a test of character \u2014 and nerve.',
     Illustration: TavernSVG,
   },
   {
     title: 'Post or Accept a Wager',
-    body: 'Put gold at stake and wait for a challenger — or step up and accept someone else\'s. You risk it. So do they.',
+    body: 'Put gold at stake and wait for a challenger \u2014 or step up and accept someone else\'s. You risk it. So do they.',
     Illustration: WagerSVG,
   },
   {
@@ -99,12 +99,12 @@ const SLIDES = [
   },
   {
     title: 'Pledge or Betray',
-    body: 'Both pledge → each gains 25%. One betrays → they take everything. Both betray → the house keeps it all.',
+    body: 'Both pledge \u2192 each gains 25%. One betrays \u2192 they take everything. Both betray \u2192 the house keeps it all.',
     Illustration: ForkSVG,
   },
   {
     title: 'Invoke the Seal',
-    body: 'When ready, call for the Seal. Both seals placed — decisions revealed. Gold changes hands. No going back.',
+    body: 'When ready, call for the Seal. Both seals placed \u2014 decisions revealed. Gold changes hands. No going back.',
     Illustration: SealSVG,
   },
 ]
@@ -166,7 +166,7 @@ export default function TutorialModal() {
       onClick={close}
     >
       <div
-        className="relative w-full max-w-sm bg-[#f5f3ea] border-2 border-[#1a1208] rounded-[12px] p-8 select-none"
+        className="relative w-full max-w-md bg-[#f5f3ea] border-2 border-[#1a1208] rounded-[12px] p-10 select-none"
         onClick={e => e.stopPropagation()}
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={e => {
@@ -183,15 +183,13 @@ export default function TutorialModal() {
           pointerStartX.current = null
         }}
       >
-        {/* Dismiss */}
         <button
           onClick={close}
           className="absolute top-4 right-4 font-mono text-xl leading-none text-[#888] hover:text-[#1a1208] transition-colors"
         >
-          ×
+          &times;
         </button>
 
-        {/* Slide content */}
         <div
           className="transition-all duration-[260ms] ease-in-out"
           style={{
@@ -201,20 +199,19 @@ export default function TutorialModal() {
               : 'translateX(0)',
           }}
         >
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-8">
             <Illustration />
           </div>
 
-          <h2 className="font-fell text-[1.75rem] text-[#1a1208] text-center mb-3 leading-tight">
+          <h2 className="font-fell text-[2rem] text-[#1a1208] text-center mb-4 leading-tight">
             {title}
           </h2>
-          <p className="font-mono text-[11px] text-[#555] text-center leading-relaxed mb-8">
+          <p className="font-mono text-[12px] text-[#555] text-center leading-relaxed mb-10">
             {body}
           </p>
         </div>
 
-        {/* Dots */}
-        <div className="flex justify-center gap-2.5 mb-5">
+        <div className="flex justify-center gap-2.5 mb-6">
           {SLIDES.map((_, i) => (
             <button
               key={i}
@@ -231,7 +228,7 @@ export default function TutorialModal() {
         {isLast ? (
           <button
             onClick={close}
-            className="w-full border border-[#1a1208] rounded-lg py-2.5 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] tracking-widest uppercase"
+            className="w-full border border-[#1a1208] rounded-lg py-3 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] tracking-widest uppercase"
           >
             Enter the Tavern
           </button>
