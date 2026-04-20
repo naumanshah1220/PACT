@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/Avatar'
 import PostChallengeModal from '@/components/PostChallengeModal'
 import TutorialModal from '@/components/TutorialModal'
+import { WagerCard, AFootCard } from '@/components/WagerCard'
+import { BotCard } from '@/components/BotCard'
+import type { BotOption } from '@/components/BotCard'
 import type { WagerWithUser, UserRow, SpectatableDuel } from '@/types/database'
 
 type FilterType = 'all' | 'under10' | '10to50' | '50plus' | 'quick' | 'long'
+type ViewMode = 'list' | 'map'
 
 const PRACTICE_DISPLAY_COUNT = 8
 const CARD_W = 240
@@ -21,15 +24,6 @@ interface ActiveDuelInfo {
   opponent: { username: string; display_initials: string }
 }
 
-interface BotOption {
-  personalityIndex: number
-  name: string
-  goldAmount: number
-  timerMinutes: number
-  disclaimer: string
-  displayInitials: string
-}
-
 interface Props {
   initialWagers: WagerWithUser[]
   currentUser: UserRow | null
@@ -37,19 +31,6 @@ interface Props {
   activeDuels: ActiveDuelInfo[]
   spectatableDuels: SpectatableDuel[]
   botOptions: BotOption[]
-}
-
-function timeAgo(ts: string) {
-  const diff = Math.floor((Date.now() - new Date(ts).getTime()) / 1000)
-  if (diff < 60) return `${diff}s ago`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  return `${Math.floor(diff / 3600)}h ago`
-}
-
-function formatTimer(mins: number) {
-  if (mins < 60) return `${mins}m`
-  if (mins < 1440) return `${mins / 60}h`
-  return `${mins / 1440}d`
 }
 
 function timeLeft(deadline: string) {
@@ -76,134 +57,17 @@ function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
   )
 }
 
-function AFootCard({ duel }: { duel: SpectatableDuel }) {
-  const router = useRouter()
-  return (
-    <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all h-full">
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-          <Avatar initials={duel.poster.display_initials} size="sm" />
-          <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1 whitespace-nowrap">Afoot</span>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
-        </div>
-      </div>
-      <p className="font-fell text-sm mb-1">{duel.poster.username}</p>
-      <p className="font-mono text-[10px] text-[#888] mb-3">{duel.p1.username} vs {duel.p2.username}</p>
-      <button onClick={() => router.push(`/spectate/${duel.duelId}`)} className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:bg-[#f0ede6] transition-colors">Spectate &rarr;</button>
-    </div>
-  )
-}
-
-function WagerCard({ wager, isNewest, currentUserId, isLoggedIn }: {
-  wager: WagerWithUser; isNewest: boolean; currentUserId: string | null; isLoggedIn: boolean
-}) {
-  const router = useRouter()
-  const supabase = createClient()
-  const [loading, setLoading] = useState(false)
-  const challengingRef = useRef(false)
-  const isOwn = currentUserId === wager.users.id
-
-  async function handleChallenge(e: React.MouseEvent) {
-    e.stopPropagation()
-    if (challengingRef.current) return
-    challengingRef.current = true
-    if (!isLoggedIn) { router.push('/login'); challengingRef.current = false; return }
-    setLoading(true)
-    try {
-      const res = await fetch('/api/accept-wager', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wagerId: wager.id }) })
-      const data = await res.json()
-      if (data.duelId) router.push(`/duel/${data.duelId}`)
-      else alert(data.error || 'Could not accept wager')
-    } finally { setLoading(false); challengingRef.current = false }
-  }
-
-  return (
-    <div className={`bg-[#f5f3ea] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all h-full flex flex-col ${isNewest ? 'border-2 border-[#1a1208]' : 'border border-[#d8d4cc]'}`}>
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-          <Avatar initials={wager.users.display_initials} size="sm" />
-          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Open</span>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
-        </div>
-      </div>
-      <p className="font-fell text-sm mb-1">{wager.users.username}</p>
-      {wager.wager_message ? (
-        <p className="font-mono text-[10px] text-[#555] mb-3 italic leading-relaxed flex-1">"{wager.wager_message}"</p>
-      ) : (
-        <p className="font-mono text-[10px] text-[#888] mb-3 flex-1">posted {timeAgo(wager.created_at)} &middot; {formatTimer(wager.timer_minutes)}</p>
-      )}
-      {isOwn ? (
-        <div className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#bbb] text-center uppercase tracking-widest">Awaiting challenger</div>
-      ) : !isLoggedIn ? (
-        <Link href="/login" className="block w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] text-center hover:bg-[#f0ede6] transition-colors">Sign in to challenge &rarr;</Link>
-      ) : (
-        <button onClick={handleChallenge} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
-          {loading ? 'Starting…' : 'Challenge →'}
-        </button>
-      )}
-    </div>
-  )
-}
-
-function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLoggedIn: boolean; onRotate: (idx: number) => void }) {
-  const supabase = createClient()
-  const [loading, setLoading] = useState(false)
-
-  async function handlePractice() {
-    if (loading) return
-    setLoading(true)
-    try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (!isLoggedIn) {
-        const { data: anonData, error } = await supabase.auth.signInAnonymously()
-        if (error || !anonData.session) { alert(`Could not start practice: ${error?.message ?? 'no session'}`); return }
-        headers['Authorization'] = `Bearer ${anonData.session.access_token}`
-      }
-      const res = await fetch('/api/start-practice', { method: 'POST', headers, body: JSON.stringify({ personalityIndex: bot.personalityIndex }) })
-      const data = await res.json()
-      if (data.duelId) { onRotate(bot.personalityIndex); window.location.href = `/duel/${data.duelId}` }
-      else alert(data.error || 'Could not start practice')
-    } finally { setLoading(false) }
-  }
-
-  return (
-    <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all">
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-          <Avatar initials={bot.displayInitials} size="sm" />
-          <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Practice</span>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
-        </div>
-      </div>
-      <p className="font-fell text-sm mb-1">{bot.name}</p>
-      <p className="font-mono text-[10px] text-[#888] mb-3">{bot.disclaimer}</p>
-      <button onClick={handlePractice} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
-        {loading ? 'Starting…' : 'Practice →'}
-      </button>
-    </div>
-  )
-}
-
 export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels, spectatableDuels, botOptions }: Props) {
   const supabase = createClient()
   const [wagers, setWagers] = useState<WagerWithUser[]>(initialWagers)
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('map')
   const [displayedBotIndices, setDisplayedBotIndices] = useState<number[]>(
     () => Array.from({ length: Math.min(PRACTICE_DISPLAY_COUNT, botOptions.length) }, (_, i) => i)
   )
 
-  // Draggable grid
   const containerRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
   const [gridPos, setGridPos] = useState({ x: 0, y: 0 })
@@ -254,7 +118,16 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         }
       }
     } catch {}
+    try {
+      const v = localStorage.getItem('pact-view-mode')
+      if (v === 'list' || v === 'map') setViewMode(v as ViewMode)
+    } catch {}
   }, [])
+
+  function setView(v: ViewMode) {
+    setViewMode(v)
+    try { localStorage.setItem('pact-view-mode', v) } catch {}
+  }
 
   function rotateBotOut(personalityIndex: number) {
     setDisplayedBotIndices(prev => {
@@ -301,7 +174,10 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
   const isLoggedIn = !!currentUser
   const totalCards = spectatableDuels.length + filtered.length
   const displayedBots = displayedBotIndices.map(i => botOptions[i]).filter(Boolean)
-  const allCards = [...spectatableDuels.map(d => ({ type: 'afoot' as const, data: d })), ...filtered.map(w => ({ type: 'wager' as const, data: w }))]
+  const allCards = [
+    ...spectatableDuels.map(d => ({ type: 'afoot' as const, data: d })),
+    ...filtered.map(w => ({ type: 'wager' as const, data: w })),
+  ]
   const hasOverflow = allCards.length > GRID_COLS
 
   const filters: { key: FilterType; label: string }[] = [
@@ -345,60 +221,84 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         </div>
       </div>
 
-      <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-3">Challenges<span className="cursor-blink ml-0.5">_</span></p>
-
-      {/* Draggable grid viewport */}
-      <div
-        ref={containerRef}
-        className={`relative overflow-hidden rounded-[12px] select-none touch-none ${
-          totalCards === 0 ? '' : 'cursor-grab active:cursor-grabbing'
-        }`}
-        style={{ height: totalCards === 0 ? 'auto' : 460 }}
-        onPointerDown={totalCards > 0 ? onGrabDown : undefined}
-        onPointerMove={totalCards > 0 ? onGrabMove : undefined}
-        onPointerUp={totalCards > 0 ? onGrabUp : undefined}
-        onPointerCancel={totalCards > 0 ? onGrabUp : undefined}
-      >
-        {totalCards === 0 ? (
-          <div className="py-20 text-center">
-            <p className="font-mono text-sm text-[#888]">No open challenges.</p>
-          </div>
-        ) : (
-          <>
-            <div
-              ref={innerRef}
-              className="absolute p-2 grid gap-3"
-              style={{
-                gridTemplateColumns: `repeat(${GRID_COLS}, ${CARD_W}px)`,
-                transform: `translate(${gridPos.x}px, ${gridPos.y}px)`,
-                willChange: 'transform',
-              }}
-            >
-              {allCards.map((card, i) =>
-                card.type === 'afoot' ? (
-                  <AFootCard key={card.data.duelId} duel={card.data} />
-                ) : (
-                  <WagerCard
-                    key={(card.data as WagerWithUser).id}
-                    wager={card.data as WagerWithUser}
-                    isNewest={(card.data as WagerWithUser).id === newestId}
-                    currentUserId={currentUser?.id ?? null}
-                    isLoggedIn={isLoggedIn}
-                  />
-                )
-              )}
-            </div>
-            {/* Edge fades */}
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-l from-[#EEEDE4] to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#EEEDE4] to-transparent" />
-            {hasOverflow && (
-              <div className="pointer-events-none absolute bottom-2 inset-x-0 flex justify-center">
-                <span className="font-mono text-[9px] text-[#bbb] uppercase tracking-widest">drag to explore</span>
-              </div>
-            )}
-          </>
-        )}
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-mono text-[11px] tracking-widest uppercase text-[#888]">Challenges<span className="cursor-blink ml-0.5">_</span></p>
+        <div className="flex gap-1">
+          <button onClick={() => setView('list')} className={`px-2.5 py-1 font-mono text-[10px] rounded border transition-colors ${viewMode === 'list' ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'}`}>List</button>
+          <button onClick={() => setView('map')} className={`px-2.5 py-1 font-mono text-[10px] rounded border transition-colors ${viewMode === 'map' ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'}`}>Map</button>
+        </div>
       </div>
+
+      {viewMode === 'list' ? (
+        <div className="space-y-3">
+          {allCards.length === 0 ? (
+            <div className="py-20 text-center">
+              <p className="font-mono text-sm text-[#888]">No open challenges.</p>
+            </div>
+          ) : allCards.map(card =>
+            card.type === 'afoot' ? (
+              <AFootCard key={card.data.duelId} duel={card.data} />
+            ) : (
+              <WagerCard
+                key={(card.data as WagerWithUser).id}
+                wager={card.data as WagerWithUser}
+                isNewest={(card.data as WagerWithUser).id === newestId}
+                currentUserId={currentUser?.id ?? null}
+                isLoggedIn={isLoggedIn}
+              />
+            )
+          )}
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          className={`relative overflow-hidden rounded-[12px] select-none touch-none ${totalCards === 0 ? '' : 'cursor-grab active:cursor-grabbing'}`}
+          style={{ height: totalCards === 0 ? 'auto' : 460 }}
+          onPointerDown={totalCards > 0 ? onGrabDown : undefined}
+          onPointerMove={totalCards > 0 ? onGrabMove : undefined}
+          onPointerUp={totalCards > 0 ? onGrabUp : undefined}
+          onPointerCancel={totalCards > 0 ? onGrabUp : undefined}
+        >
+          {totalCards === 0 ? (
+            <div className="py-20 text-center">
+              <p className="font-mono text-sm text-[#888]">No open challenges.</p>
+            </div>
+          ) : (
+            <>
+              <div
+                ref={innerRef}
+                className="absolute p-2 grid gap-3"
+                style={{
+                  gridTemplateColumns: `repeat(${GRID_COLS}, ${CARD_W}px)`,
+                  transform: `translate(${gridPos.x}px, ${gridPos.y}px)`,
+                  willChange: 'transform',
+                }}
+              >
+                {allCards.map(card =>
+                  card.type === 'afoot' ? (
+                    <AFootCard key={card.data.duelId} duel={card.data} />
+                  ) : (
+                    <WagerCard
+                      key={(card.data as WagerWithUser).id}
+                      wager={card.data as WagerWithUser}
+                      isNewest={(card.data as WagerWithUser).id === newestId}
+                      currentUserId={currentUser?.id ?? null}
+                      isLoggedIn={isLoggedIn}
+                    />
+                  )
+                )}
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-l from-[#EEEDE4] to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#EEEDE4] to-transparent" />
+              {hasOverflow && (
+                <div className="pointer-events-none absolute bottom-2 inset-x-0 flex justify-center">
+                  <span className="font-mono text-[9px] text-[#bbb] uppercase tracking-widest">drag to explore</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <div className="mt-10">
         <p className="font-mono text-[11px] tracking-widest uppercase text-[#888] mb-4">Practice<span className="cursor-blink ml-0.5">_</span></p>
