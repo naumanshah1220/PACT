@@ -57,7 +57,7 @@ function timeLeft(deadline: string) {
   return `${m}m left`
 }
 
-function CoinIcon({ size = 56, bg = '#f5f3ea' }: { size?: number; bg?: string }) {
+function CoinIcon({ size = 84, bg = '#f5f3ea' }: { size?: number; bg?: string }) {
   return (
     <div style={{ isolation: 'isolate', backgroundColor: bg }}>
       <img src="/icons/coin.png" alt="" width={size} height={size} className="object-contain flex-shrink-0" style={{ mixBlendMode: 'multiply' }} />
@@ -94,7 +94,7 @@ function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
           <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1 whitespace-nowrap">Afoot</span>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <CoinIcon size={56} bg="#f5f3ea" />
+          <CoinIcon size={84} bg="#f5f3ea" />
           <div className="text-right">
             <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
             <span className="font-mono text-[10px] text-[#888] block">gold</span>
@@ -157,7 +157,7 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Open</span>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <CoinIcon size={56} bg="#f5f3ea" />
+          <CoinIcon size={84} bg="#f5f3ea" />
           <div className="text-right">
             <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
             <span className="font-mono text-[10px] text-[#888] block">gold</span>
@@ -217,7 +217,7 @@ function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLoggedIn: bo
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Practice</span>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <CoinIcon size={56} bg="#f5f3ea" />
+          <CoinIcon size={84} bg="#f5f3ea" />
           <div className="text-right">
             <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
             <span className="font-mono text-[10px] text-[#888] block">gold</span>
@@ -236,6 +236,7 @@ function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLoggedIn: bo
 
 export default function TavernClient({ initialWagers, currentUser, hoardBalance, activeDuels, spectatableDuels, botOptions }: Props) {
   const supabase = createClient()
+  const router = useRouter()
   const [wagers, setWagers] = useState<WagerWithUser[]>(initialWagers)
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
@@ -254,6 +255,13 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         }
       }
     } catch {}
+  }, [])
+
+  // Refresh server data when tab regains focus so completed duels disappear without a manual reload
+  useEffect(() => {
+    const onFocus = () => router.refresh()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
 
   function rotateBotOut(personalityIndex: number) {
@@ -317,7 +325,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     <main className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1.5 border border-[#d8d4cc] rounded-full px-3 py-1.5">
-          <CoinIcon size={24} bg="#EEEDE4" />
+          <CoinIcon size={36} bg="#EEEDE4" />
           <span className="font-fell text-sm">{currentUser?.gold_balance ?? '—'}</span>
           <span className="font-mono text-[10px] text-[#888]">Gold</span>
         </div>
