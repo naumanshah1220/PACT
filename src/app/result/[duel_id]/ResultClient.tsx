@@ -88,9 +88,7 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
       <h1 className="font-fell text-[28px] mb-5">{config.title}</h1>
 
       <div className="flex items-center gap-2.5 mb-3">
-        <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }}>
-          <img src="/icons/coin.png" alt="" width={120} height={120} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
-        </div>
+        <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
         <span className="font-fell text-3xl text-[#1a1208]">{goldDelta > 0 ? `+${goldDelta}` : `${goldDelta}`}</span>
       </div>
 
