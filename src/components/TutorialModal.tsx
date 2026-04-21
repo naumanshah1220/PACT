@@ -10,7 +10,7 @@ const SLIDES = [
   },
   {
     title: 'Post or Accept a Wager',
-    body: 'Put gold at stake and wait for a challenger — or step up and accept someone else\'s. You risk it. So do they.',
+    body: "Put gold at stake and wait for a challenger — or step up and accept someone else's. You risk it. So do they.",
     icons: ['/icons/coin.png'],
   },
   {
@@ -80,8 +80,9 @@ export default function TutorialModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={close}>
+      {/* isolate ensures mix-blend-multiply blends against this card's bg, not the dark overlay */}
       <div
-        className="relative w-full max-w-md bg-[#f5f3ea] border-2 border-[#1a1208] rounded-[12px] p-10 select-none"
+        className="relative isolate w-full max-w-md bg-[#f5f3ea] border-2 border-[#1a1208] rounded-[12px] p-10 select-none"
         onClick={e => e.stopPropagation()}
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={e => {
@@ -107,7 +108,7 @@ export default function TutorialModal() {
             transform: animating ? `translateX(${dir < 0 ? '24px' : '-24px'})` : 'translateX(0)',
           }}
         >
-          <div className="flex justify-center items-end gap-4 mb-8">
+          <div className="flex justify-center items-center gap-4 mb-8">
             {icons.map((src, i) => (
               <img
                 key={i}
