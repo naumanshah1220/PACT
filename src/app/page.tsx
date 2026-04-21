@@ -12,23 +12,27 @@ export default async function TavernPage() {
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  const { data: wagersRaw } = await admin
-    .from('wagers')
-    .select('*, users(*)')
-    .eq('status', 'open')
-    .order('created_at', { ascending: false })
-    .limit(60)
+  // Round 1: all independent queries in parallel
+  const [wagersResult, spectatableResult, authResult, hoardResult] = await Promise.all([
+    admin
+      .from('wagers')
+      .select('*, users(*)')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(60),
+    supabase
+      .from('duels')
+      .select('id, wager_id, player1:users!duels_player1_id_fkey(username, display_initials), player2:users!duels_player2_id_fkey(username, display_initials), wagers!inner(id, gold_amount, spectators_allowed, practice, users(username, display_initials))')
+      .eq('status', 'active')
+      .eq('wagers.spectators_allowed', true)
+      .limit(10),
+    supabase.auth.getUser(),
+    supabase.from('hoard').select('balance').single(),
+  ])
 
-  const wagers = (wagersRaw ?? []).filter((w: any) => !w.users?.is_bot)
+  const wagers = (wagersResult.data ?? []).filter((w: any) => !w.users?.is_bot)
 
-  const { data: activeDuelRaw } = await supabase
-    .from('duels')
-    .select('id, wager_id, player1:users!duels_player1_id_fkey(username, display_initials), player2:users!duels_player2_id_fkey(username, display_initials), wagers!inner(id, gold_amount, spectators_allowed, practice, users(username, display_initials))')
-    .eq('status', 'active')
-    .eq('wagers.spectators_allowed', true)
-    .limit(10)
-
-  const spectatableDuels: SpectatableDuel[] = (activeDuelRaw ?? []).map((d: any) => ({
+  const spectatableDuels: SpectatableDuel[] = (spectatableResult.data ?? []).map((d: any) => ({
     duelId: d.id,
     wagerId: d.wager_id,
     goldAmount: d.wagers.gold_amount,
@@ -48,7 +52,7 @@ export default async function TavernPage() {
     displayInitials: p.displayInitials,
   }))
 
-  const { data: { user: authUser } } = await supabase.auth.getUser()
+  const authUser = authResult.data.user
   let currentUser = null
   let activeDuels: Array<{
     id: string
@@ -57,25 +61,25 @@ export default async function TavernPage() {
   }> = []
 
   if (authUser) {
-    const { data: profile } = await supabase
-      .from('users').select('*').eq('id', authUser.id).single()
-    currentUser = profile
+    // Round 2: user-specific queries in parallel
+    const [profileResult, duelsResult] = await Promise.all([
+      supabase.from('users').select('*').eq('id', authUser.id).single(),
+      supabase
+        .from('duels')
+        .select('id, deadline, player1_id, player2_id, player1:users!duels_player1_id_fkey(username, display_initials), player2:users!duels_player2_id_fkey(username, display_initials)')
+        .eq('status', 'active')
+        .or(`player1_id.eq.${authUser.id},player2_id.eq.${authUser.id}`),
+    ])
 
-    const { data: duelsRaw } = await supabase
-      .from('duels')
-      .select('id, deadline, player1_id, player2_id, player1:users!duels_player1_id_fkey(username, display_initials), player2:users!duels_player2_id_fkey(username, display_initials)')
-      .eq('status', 'active')
-      .or(`player1_id.eq.${authUser.id},player2_id.eq.${authUser.id}`)
+    currentUser = profileResult.data
 
-    if (duelsRaw) {
-      activeDuels = (duelsRaw as any[]).map(d => {
+    if (duelsResult.data) {
+      activeDuels = (duelsResult.data as any[]).map(d => {
         const isP1 = d.player1_id === authUser.id
         return { id: d.id, deadline: d.deadline, opponent: isP1 ? d.player2 : d.player1 }
       })
     }
   }
-
-  const { data: hoard } = await supabase.from('hoard').select('balance').single()
 
   return (
     <>
@@ -84,7 +88,7 @@ export default async function TavernPage() {
       <TavernClient
         initialWagers={wagers ?? []}
         currentUser={currentUser}
-        hoardBalance={hoard?.balance ?? 0}
+        hoardBalance={hoardResult.data?.balance ?? 0}
         activeDuels={activeDuels}
         spectatableDuels={spectatableDuels}
         botOptions={botOptions}
