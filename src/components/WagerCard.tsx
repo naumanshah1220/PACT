@@ -25,7 +25,7 @@ function CoinIcon() {
     <img
       src="/icons/coin.png"
       alt=""
-      className="w-6 h-6 object-contain flex-shrink-0"
+      className="w-[18px] h-[18px] object-contain flex-shrink-0"
       style={{ mixBlendMode: 'multiply' }}
     />
   )
