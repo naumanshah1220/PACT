@@ -20,6 +20,19 @@ function formatTimer(mins: number) {
   return `${mins / 1440}d`
 }
 
+function CoinIcon({ size = 16 }: { size?: number }) {
+  return (
+    <img
+      src="/icons/coin.png"
+      alt=""
+      width={size}
+      height={size}
+      className="object-contain flex-shrink-0"
+      style={{ mixBlendMode: 'multiply' }}
+    />
+  )
+}
+
 export function AFootCard({ duel }: { duel: SpectatableDuel }) {
   const router = useRouter()
   return (
@@ -29,9 +42,12 @@ export function AFootCard({ duel }: { duel: SpectatableDuel }) {
           <Avatar initials={duel.poster.display_initials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1 whitespace-nowrap">Afoot</span>
         </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <CoinIcon size={18} />
+          <div className="text-right">
+            <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
+            <span className="font-mono text-[10px] text-[#888] block">gold</span>
+          </div>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{duel.poster.username}</p>
@@ -71,9 +87,12 @@ export function WagerCard({ wager, isNewest, currentUserId, isLoggedIn }: {
           <Avatar initials={wager.users.display_initials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Open</span>
         </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <CoinIcon size={18} />
+          <div className="text-right">
+            <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
+            <span className="font-mono text-[10px] text-[#888] block">gold</span>
+          </div>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{wager.users.username}</p>

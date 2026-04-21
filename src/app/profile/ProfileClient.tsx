@@ -6,6 +6,19 @@ import Avatar from '@/components/Avatar'
 import { createClient } from '@/lib/supabase/client'
 import type { UserRow } from '@/types/database'
 
+function CoinIcon({ size = 20 }: { size?: number }) {
+  return (
+    <img
+      src="/icons/coin.png"
+      alt=""
+      width={size}
+      height={size}
+      className="object-contain flex-shrink-0"
+      style={{ mixBlendMode: 'multiply' }}
+    />
+  )
+}
+
 function DuelRow({ duel, userId }: { duel: any; userId: string }) {
   const isP1 = duel.player1_id === userId
   const opp = isP1 ? duel.player2 : duel.player1
@@ -37,11 +50,14 @@ function DuelRow({ duel, userId }: { duel: any; userId: string }) {
           <p className="font-mono text-[10px] text-[#888]">{outcome?.replace(/_/g, ' ')}</p>
         </div>
       </div>
-      <div className="text-right">
-        <span className="font-fell text-base text-[#1a1208]">
-          {won ? '+' : lost ? '-' : ''}{stake}
-        </span>
-        <span className="font-mono text-[10px] text-[#888] block">gold</span>
+      <div className="flex items-center gap-1">
+        <CoinIcon size={14} />
+        <div className="text-right">
+          <span className="font-fell text-base text-[#1a1208]">
+            {won ? '+' : lost ? '-' : ''}{stake}
+          </span>
+          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        </div>
       </div>
     </div>
   )
@@ -103,9 +119,10 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
         <div className="mt-5 flex gap-6">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-1">Gold</p>
-            <p className="font-fell text-3xl">
-              <span className="text-amber-600 mr-1">⬡</span>{profile.gold_balance}
-            </p>
+            <div className="flex items-center gap-2">
+              <CoinIcon size={28} />
+              <p className="font-fell text-3xl">{profile.gold_balance}</p>
+            </div>
           </div>
           <div className="w-px bg-[#d8d4cc]" />
           <div>
