@@ -33,7 +33,6 @@ const SLIDES = [
 export default function TutorialModal() {
   const [open, setOpen] = useState(false)
   const [slide, setSlide] = useState(0)
-  const [dir, setDir] = useState(0)
   const [animating, setAnimating] = useState(false)
   const touchStartX = useRef<number | null>(null)
   const pointerStartX = useRef<number | null>(null)
@@ -68,7 +67,6 @@ export default function TutorialModal() {
     if (animating) return
     const next = slide + direction
     if (next < 0 || next >= SLIDES.length) return
-    setDir(direction)
     setAnimating(true)
     setTimeout(() => { setSlide(next); setAnimating(false) }, 260)
   }
@@ -80,9 +78,8 @@ export default function TutorialModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={close}>
-      {/* isolate ensures mix-blend-multiply blends against this card's bg, not the dark overlay */}
       <div
-        className="relative isolate w-full max-w-md bg-[#f5f3ea] border-2 border-[#1a1208] rounded-[12px] p-10 select-none"
+        className="relative w-full max-w-md bg-[#f5f3ea] border-2 border-[#1a1208] rounded-[12px] p-10 select-none"
         onClick={e => e.stopPropagation()}
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
         onTouchEnd={e => {
@@ -101,22 +98,19 @@ export default function TutorialModal() {
       >
         <button onClick={close} className="absolute top-4 right-4 font-mono text-xl leading-none text-[#888] hover:text-[#1a1208] transition-colors">&times;</button>
 
-        <div
-          className="transition-all duration-[260ms] ease-in-out"
-          style={{
-            opacity: animating ? 0 : 1,
-            transform: animating ? `translateX(${dir < 0 ? '24px' : '-24px'})` : 'translateX(0)',
-          }}
-        >
+        {/* opacity-only fade — no transform, which would break mix-blend-mode */}
+        <div style={{ opacity: animating ? 0 : 1, transition: 'opacity 260ms ease-in-out' }}>
           <div className="flex justify-center items-center gap-4 mb-8">
             {icons.map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt=""
-                className="object-contain mix-blend-multiply"
-                style={{ width: 160, height: 160 }}
-              />
+              // isolate + explicit bg so mix-blend-multiply blends against cream, not a transparent stacking context
+              <div key={i} className="isolate" style={{ backgroundColor: '#f5f3ea' }}>
+                <img
+                  src={src}
+                  alt=""
+                  className="object-contain"
+                  style={{ mixBlendMode: 'multiply', width: 160, height: 160 }}
+                />
+              </div>
             ))}
           </div>
           <h2 className="font-fell text-[2rem] text-[#1a1208] text-center mb-4 leading-tight">{title}</h2>
