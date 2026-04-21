@@ -84,9 +84,11 @@ export default function AlmsClient({ currentUser, requests }: Props) {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
-      {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
+          <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }} className="mb-3">
+            <img src="/icons/alms.png" alt="" width={160} height={160} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+          </div>
           <h1 className="font-serif text-3xl font-bold">The Alms</h1>
           <p className="font-mono text-[11px] uppercase tracking-widest text-[#888] mt-1">
             Give gold, earn honour
@@ -94,18 +96,16 @@ export default function AlmsClient({ currentUser, requests }: Props) {
         </div>
         <button
           onClick={() => { setShowPost(true); setError('') }}
-          className="bg-[#111] text-white font-sans text-sm font-medium rounded-full px-4 py-1.5 hover:bg-[#333] transition-colors"
+          className="bg-[#111] text-white font-sans text-sm font-medium rounded-full px-4 py-1.5 hover:bg-[#333] transition-colors mt-1"
         >
           Request Alms
         </button>
       </div>
 
-      {/* Balance hint */}
       <p className="font-mono text-[11px] text-[#888] mb-4">
         Your balance: <span className="text-[#111] font-medium">{currentUser.gold_balance} gold</span>
       </p>
 
-      {/* Search */}
       <div className="mb-5">
         <input
           type="text"
@@ -120,7 +120,6 @@ export default function AlmsClient({ currentUser, requests }: Props) {
         <p className="font-mono text-xs text-[#993C1D] mb-4">{error}</p>
       )}
 
-      {/* Request board */}
       <div className="space-y-3">
         {filtered.length === 0 && (
           <p className="font-mono text-xs text-[#888] text-center py-12">
@@ -181,7 +180,6 @@ export default function AlmsClient({ currentUser, requests }: Props) {
         })}
       </div>
 
-      {/* Post request modal */}
       {showPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white border border-[#d8d4cc] rounded-[12px] w-full max-w-sm p-6 animate-fade-up">

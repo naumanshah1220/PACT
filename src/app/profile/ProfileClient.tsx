@@ -37,11 +37,13 @@ function DuelRow({ duel, userId }: { duel: any; userId: string }) {
           <p className="font-mono text-[10px] text-[#888]">{outcome?.replace(/_/g, ' ')}</p>
         </div>
       </div>
-      <div className="text-right">
+      <div className="flex items-center gap-1.5 justify-end">
         <span className="font-fell text-base text-[#1a1208]">
           {won ? '+' : lost ? '-' : ''}{stake}
         </span>
-        <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        <div style={{ isolation: 'isolate', backgroundColor: '#f5f3ea' }}>
+          <img src="/icons/coin.png" alt="" width={32} height={32} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+        </div>
       </div>
     </div>
   )
@@ -69,7 +71,6 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
-      {/* Profile card */}
       <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-6 mb-6">
         <div className="flex items-center gap-4">
           <Avatar initials={profile.display_initials} size="lg" />
@@ -98,14 +99,17 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
           </button>
         </div>
 
-        <div className="mt-5 flex gap-6">
+        <div className="mt-5 flex gap-6 items-end">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-1">Gold</p>
-            <p className="font-fell text-3xl">
-              <span className="text-amber-600 mr-1">⬡</span>{profile.gold_balance}
-            </p>
+            <div className="flex items-center gap-2">
+              <div style={{ isolation: 'isolate', backgroundColor: '#f5f3ea' }}>
+                <img src="/icons/coin.png" alt="" width={72} height={72} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+              </div>
+              <span className="font-fell text-3xl">{profile.gold_balance}</span>
+            </div>
           </div>
-          <div className="w-px bg-[#d8d4cc]" />
+          <div className="w-px bg-[#d8d4cc] self-stretch" />
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-1">Honour</p>
             <p className="font-fell text-3xl">{profile.honor_score}</p>
@@ -113,7 +117,6 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
         </div>
       </div>
 
-      {/* Tab bar */}
       <div className="flex gap-2 mb-4">
         {(['duels', 'share'] as const).map(t => (
           <button
@@ -143,7 +146,7 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
             onClick={() => window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')}
             className="border border-[#1a1208] rounded-xl px-5 py-2.5 font-mono text-sm hover:bg-[#f0ede6] transition-colors"
           >
-            Share on ⨯
+            Share on ⋯
           </button>
         </div>
       )}
