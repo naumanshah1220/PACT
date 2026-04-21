@@ -29,21 +29,11 @@ export default function PactHeader() {
     <header className="border-b border-[#D4CCBA] sticky top-0 z-50" style={{ backgroundColor: '#EEEDE4' }}>
       <div className="max-w-2xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <img
-              src="/icons/raven.png"
-              alt=""
-              className="h-9 w-auto object-contain"
-              style={{ mixBlendMode: 'multiply' }}
-            />
-            <div className="flex flex-col">
-              <span className="font-fell text-[2.2rem] leading-none text-[#1a1208]" style={{ fontStyle: 'normal' }}>
-                PACT
-              </span>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="h-px w-6 bg-[#1a1208] opacity-30" />
-                <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#999]">A Game of Trust</span>
-              </div>
+          <Link href="/" className="flex flex-col">
+            <span className="font-fell text-[2.2rem] leading-none text-[#1a1208]" style={{ fontStyle: 'normal' }}>PACT</span>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="h-px w-6 bg-[#1a1208] opacity-30" />
+              <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[#999]">A Game of Trust</span>
             </div>
           </Link>
 
@@ -61,14 +51,7 @@ export default function PactHeader() {
                   className="flex items-center gap-1.5 border border-[#D4CCBA] rounded-full px-3 py-1.5 font-mono text-xs"
                   style={{ backgroundColor: '#F5F3EA' }}
                 >
-                  <img
-                    src="/icons/coin.png"
-                    alt=""
-                    width={14}
-                    height={14}
-                    className="object-contain"
-                    style={{ mixBlendMode: 'multiply' }}
-                  />
+                  <img src="/icons/coin.png" alt="" width={22} height={22} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
                   <span className="font-medium">{user.gold_balance}</span>
                   <span className="text-[#999]">Gold</span>
                 </Link>
@@ -81,10 +64,7 @@ export default function PactHeader() {
                 </Link>
               </>
             ) : (
-              <Link
-                href="/login"
-                className="font-mono text-xs border border-[#D4CCBA] rounded-full px-3 py-1.5 transition-colors hover:bg-[#F5F3EA]"
-              >
+              <Link href="/login" className="font-mono text-xs border border-[#D4CCBA] rounded-full px-3 py-1.5 transition-colors hover:bg-[#F5F3EA]">
                 Sign in
               </Link>
             )}
