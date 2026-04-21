@@ -41,9 +41,12 @@ export function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLogge
           <Avatar initials={bot.displayInitials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Practice</span>
         </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
+          <div className="text-right">
+            <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
+            <span className="font-mono text-[10px] text-[#888] block">gold</span>
+          </div>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{bot.name}</p>

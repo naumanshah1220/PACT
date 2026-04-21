@@ -70,7 +70,10 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
               onChange={e => setGold(Number(e.target.value))}
               className="flex-1 accent-[#1a1208]"
             />
-            <span className="font-fell text-2xl w-12 text-right">{gold}</span>
+            <div className="flex items-center gap-1 justify-end">
+              <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
+              <span className="font-fell text-2xl w-8 text-right">{gold}</span>
+            </div>
           </div>
           <p className="font-mono text-[10px] text-[#888] mt-1">Balance: {currentUser.gold_balance} &middot; Max: {maxWager}</p>
         </div>

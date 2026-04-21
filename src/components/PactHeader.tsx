@@ -32,7 +32,7 @@ export default function PactHeader() {
       <div className="max-w-2xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex flex-col">
-            <span className="font-serif text-4xl font-bold leading-none tracking-tight">PACT</span>
+            <span className="font-fell text-4xl leading-none tracking-tight">PACT</span>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="h-[1.5px] w-6 bg-black" />
               <span className="font-mono text-[11px] tracking-[0.18em] uppercase">A Game of Trust</span>
@@ -42,9 +42,7 @@ export default function PactHeader() {
             {user ? (
               <>
                 <Link href="/profile" className="flex items-center gap-1.5 bg-white border border-[#d8d4cc] rounded-full px-3 py-1.5 font-mono text-xs">
-                  <div style={{ isolation: 'isolate', backgroundColor: 'white' }}>
-                    <img src="/icons/coin.png" alt="" width={36} height={36} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
-                  </div>
+                  <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
                   <span className="font-medium">{user.gold_balance}</span>
                   <span className="text-[#888]">Gold</span>
                 </Link>

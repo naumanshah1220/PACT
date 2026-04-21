@@ -20,14 +20,12 @@ function formatTimer(mins: number) {
   return `${mins / 1440}d`
 }
 
-function CoinIcon({ size = 16 }: { size?: number }) {
+function CoinIcon() {
   return (
     <img
       src="/icons/coin.png"
       alt=""
-      width={size}
-      height={size}
-      className="object-contain flex-shrink-0"
+      className="w-6 h-6 object-contain flex-shrink-0"
       style={{ mixBlendMode: 'multiply' }}
     />
   )
@@ -43,7 +41,7 @@ export function AFootCard({ duel }: { duel: SpectatableDuel }) {
           <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1 whitespace-nowrap">Afoot</span>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <CoinIcon size={18} />
+          <CoinIcon />
           <div className="text-right">
             <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
             <span className="font-mono text-[10px] text-[#888] block">gold</span>
@@ -88,7 +86,7 @@ export function WagerCard({ wager, isNewest, currentUserId, isLoggedIn }: {
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Open</span>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <CoinIcon size={18} />
+          <CoinIcon />
           <div className="text-right">
             <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
             <span className="font-mono text-[10px] text-[#888] block">gold</span>
