@@ -239,9 +239,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">&larr; Back</Link>
         <span className="font-serif text-lg">The Duel</span>
         <div className="flex items-center gap-1.5 font-mono text-xs">
-          <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }}>
-            <img src="/icons/coin.png" alt="" width={42} height={42} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
-          </div>
+          <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
           <span>{duel.wagers.gold_amount} gold at stake</span>
         </div>
       </div>
@@ -266,7 +264,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
             onClick={sendRaven}
             className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:border-[#aaa] hover:text-[#111] transition-colors flex items-center justify-center gap-2"
           >
-            <img src="/icons/raven.png" alt="" width={42} height={42} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <img src="/icons/raven.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
             Send Raven
           </button>
         </div>
@@ -334,7 +332,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
               : decision ? 'opacity-40 border-[#d8d4cc] text-[#888]'
               : 'border-[#d8d4cc] hover:border-[#3B6D11] hover:text-[#3B6D11]'
             }`}>
-            <img src="/icons/pledge.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <img src="/icons/pledge.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
             Pledge
           </button>
           <button onClick={() => makeDecision('betray')} disabled={!bothMessaged || !!decision}
@@ -344,7 +342,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
               : decision ? 'opacity-40 border-[#d8d4cc] text-[#888]'
               : 'border-[#d8d4cc] hover:border-[#993C1D] hover:text-[#993C1D]'
             }`}>
-            <img src="/icons/betray.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <img src="/icons/betray.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
             Betray
           </button>
         </div>
@@ -358,7 +356,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
             {iHaveSealed ? (
               <div className="flex flex-col items-center gap-2">
                 <div className="w-[180px] h-[180px] rounded-full border border-[#d8d4cc] flex items-center justify-center overflow-hidden opacity-50">
-                  <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
+                  <img src="/icons/seal.png" alt="" className="w-full h-full object-contain" style={{ mixBlendMode: 'multiply' }} />
                 </div>
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#aaa]">Seal placed</span>
               </div>
@@ -369,7 +367,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
                   <button onClick={requestSeal} disabled={sealLoading}
                     className="w-[180px] h-[180px] rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex items-center justify-center overflow-hidden hover:bg-[#3B6D11] transition-colors mx-auto disabled:opacity-40">
                     {sealLoading ? <span className="font-mono text-sm text-[#3B6D11]">…</span> : (
-                      <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
+                      <img src="/icons/seal.png" alt="" className="w-full h-full object-contain" style={{ mixBlendMode: 'multiply' }} />
                     )}
                   </button>
                   <span className="font-mono text-[8px] tracking-wider uppercase text-[#3B6D11]">Confirm Seal</span>
@@ -380,7 +378,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
                 <button onClick={requestSeal} disabled={sealLoading}
                   className="w-[180px] h-[180px] rounded-full border border-[#111] flex items-center justify-center overflow-hidden hover:bg-[#111] transition-colors disabled:opacity-40">
                   {sealLoading ? <span className="font-mono text-sm">…</span> : (
-                    <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
+                    <img src="/icons/seal.png" alt="" className="w-full h-full object-contain" style={{ mixBlendMode: 'multiply' }} />
                   )}
                 </button>
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#888]">Invoke the Seal</span>
