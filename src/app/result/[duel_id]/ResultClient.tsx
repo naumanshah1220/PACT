@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { DuelWithUsers } from '@/types/database'
 
 type Outcome = NonNullable<DuelWithUsers['outcome']>
@@ -60,6 +60,7 @@ function getGoldDelta(outcome: Outcome, isP1: boolean, stake: number): number {
 }
 
 export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUsers; currentUserId: string }) {
+  const router = useRouter()
   const isP1 = currentUserId === duel.player1_id
   const outcome = duel.outcome as Outcome | null
 
@@ -98,8 +99,18 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
       <p className="font-mono text-sm text-[#555] mb-10">{subtitle}</p>
 
       <div className="flex flex-col gap-3">
-        <Link href="/" className="inline-block border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors">Back to Tavern</Link>
-        <button onClick={() => window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')} className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors">Share on ⋯</button>
+        <button
+          onClick={() => { router.refresh(); router.push('/') }}
+          className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors w-full"
+        >
+          Back to Tavern
+        </button>
+        <button
+          onClick={() => window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')}
+          className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
+        >
+          Share on ⋯
+        </button>
       </div>
     </main>
   )

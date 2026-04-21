@@ -58,11 +58,12 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const [liveDuel, setLiveDuel] = useState(duel)
   const [sealLoading, setSealLoading] = useState(false)
   const [showRaven, setShowRaven] = useState(false)
+  // Set to true the moment the user sends their first message — no DB round-trip needed
+  const [hasSentMessage, setHasSentMessage] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const isP1 = currentUserId === duel.player1_id
   const opponent = isP1 ? duel.player2 : duel.player1
-  // Use wager.practice as the bot signal — structurally set at duel creation, no DB column uncertainty
   const opponentIsBot = duel.wagers.practice
 
   useEffect(() => {
@@ -129,16 +130,21 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     return () => clearTimeout(t)
   }, [])
 
-  // Derive messaged state from messages array (updates optimistically on send)
-  // so buttons unlock the instant the user sends their message, not after a DB round-trip
-  const myMessaged = messages.some(m => m.sender_id === currentUserId)
+  // hasSentMessage flips synchronously in sendMessage before any await
+  // messages.some() catches the optimistic message added right after
+  // liveDuel fallback handles re-mounts (e.g. the user already messaged earlier)
+  const myMessaged = hasSentMessage
+    || messages.some(m => m.sender_id === currentUserId)
     || (isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged)
+
   const opponentHasMessaged = messages.some(m => m.sender_id === opponent.id)
     || (isP1 ? liveDuel.player2_messaged : liveDuel.player1_messaged)
+
   const bothMessaged = opponentIsBot ? myMessaged : (myMessaged && opponentHasMessaged)
 
   const myDecision = (isP1 ? liveDuel.player1_decision : liveDuel.player2_decision) ?? decision
-  const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
+  // Bot always pre-decides at duel creation — skip the liveDuel check for practice duels
+  const opponentDecided = opponentIsBot || (isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision)
   const canSeal = !!myDecision && opponentDecided
   const iHaveSealed = liveDuel.seal_requested_by === currentUserId
   const theyHaveSealed = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
@@ -146,6 +152,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   async function sendMessage() {
     if (!input.trim() || sending) return
+    // Flip hasSentMessage first — this is the synchronous trigger that unlocks pledge/betray immediately
+    setHasSentMessage(true)
     setSending(true)
     const content = input.trim()
     setInput('')
