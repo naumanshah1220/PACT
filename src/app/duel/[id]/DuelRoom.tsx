@@ -13,23 +13,24 @@ interface Props {
   currentUserId: string
 }
 
-function TimerBar({ deadline }: { deadline: string }) {
+function TimerBar({ deadline, timerMinutes }: { deadline: string; timerMinutes: number }) {
   const [pct, setPct] = useState(100)
   const [label, setLabel] = useState('')
 
   useEffect(() => {
+    const totalMs = timerMinutes * 60 * 1000
     function tick() {
       const remaining = Math.max(0, new Date(deadline).getTime() - Date.now())
       const h = Math.floor(remaining / 3600000)
       const m = Math.floor((remaining % 3600000) / 60000)
       const s = Math.floor((remaining % 60000) / 1000)
       setLabel(h > 0 ? `${h}h ${m}m left` : m > 0 ? `${m}m ${s}s left` : `${s}s left`)
-      setPct(Math.max(0, (remaining / (1000 * 60 * 60 * 24)) * 100))
+      setPct(Math.max(0, (remaining / totalMs) * 100))
     }
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [deadline])
+  }, [deadline, timerMinutes])
 
   return (
     <div className="px-4 py-3 border-b border-[#d8d4cc]">
@@ -48,7 +49,7 @@ function TimerBar({ deadline }: { deadline: string }) {
 }
 
 export default function DuelRoom({ duel, initialMessages, currentUserId }: Props) {
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
   const router = useRouter()
   const [messages, setMessages] = useState<MessageWithUser[]>(initialMessages)
   const [input, setInput] = useState('')
@@ -129,7 +130,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   const myMessaged = isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged
   const bothMessaged = opponentIsBot ? myMessaged : (liveDuel.player1_messaged && liveDuel.player2_messaged)
-  // Use local decision state (set optimistically) in addition to liveDuel for canSeal
   const myDecision = (isP1 ? liveDuel.player1_decision : liveDuel.player2_decision) ?? decision
   const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
   const canSeal = !!myDecision && opponentDecided
@@ -158,7 +158,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
       supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
     ])
-    // Optimistic update so pledge/betray unlock immediately without waiting for realtime
     setLiveDuel(prev => ({ ...prev, [field]: true }))
 
     if (opponentIsBot) {
@@ -176,7 +175,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     if (!bothMessaged) return
     setDecision(d)
     const field = isP1 ? 'player1_decision' : 'player2_decision'
-    // Optimistic update so canSeal shows immediately after both decide
     setLiveDuel(prev => ({ ...prev, [field]: d }))
     await supabase.from('duels').update({ [field]: d }).eq('id', duel.id)
   }
@@ -200,7 +198,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     if (data.resolved) {
       router.push(`/result/${duel.id}`)
     } else {
-      // Optimistic update so seal UI switches to "placed" immediately
       setLiveDuel(prev => ({ ...prev, seal_requested_by: currentUserId }))
     }
     setSealLoading(false)
@@ -231,7 +228,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </div>
       </div>
 
-      <TimerBar deadline={duel.deadline} />
+      <TimerBar deadline={duel.deadline} timerMinutes={(duel.wagers as any).timer_minutes ?? 1440} />
 
       {showRaven && !ravenAlreadySent && (
         <div className="mx-4 mt-2">

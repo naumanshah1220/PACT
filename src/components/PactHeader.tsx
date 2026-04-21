@@ -1,20 +1,30 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { UserRow } from '@/types/database'
+
+type HeaderUser = { gold_balance: number; display_initials: string }
 
 export default function PactHeader() {
-  const [user, setUser] = useState<UserRow | null>(null)
-  const supabase = createClient()
+  const [user, setUser] = useState<HeaderUser | null>(null)
+  const supabase = useRef(createClient()).current
+
+  async function fetchUser() {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return
+    const { data } = await supabase
+      .from('users')
+      .select('gold_balance, display_initials')
+      .eq('id', authUser.id)
+      .single()
+    if (data) setUser(data as HeaderUser)
+  }
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
-      if (!authUser) return
-      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
-      if (data) setUser(data)
-    })
+    fetchUser()
+    window.addEventListener('focus', fetchUser)
+    return () => window.removeEventListener('focus', fetchUser)
   }, [])
 
   return (
