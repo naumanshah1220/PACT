@@ -20,6 +20,9 @@ export default async function NoblesPage() {
       <PactHeader />
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="mb-6">
+          <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }} className="mb-4">
+            <img src="/icons/nobles.png" alt="" width={160} height={160} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+          </div>
           <h1 className="font-fell text-3xl">House of Nobles</h1>
           <p className="font-mono text-[11px] uppercase tracking-widest text-[#888] mt-1">
             Ranked by Gold
