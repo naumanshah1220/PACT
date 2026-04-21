@@ -20,9 +20,10 @@ const config: Config = {
         }
       },
       fontFamily: {
-        serif: ['Playfair Display', 'Georgia', 'serif'],
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
-        mono: ['DM Mono', 'monospace'],
+        serif: ['var(--font-playfair)', 'Georgia', 'serif'],
+        fell: ['var(--font-playfair)', 'Georgia', 'serif'],
+        sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-dm-mono)', 'monospace'],
       },
       animation: {
         'scroll-up': 'scroll-up 30s linear infinite',

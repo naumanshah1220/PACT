@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
-
 :root {
   --bg: #eae8e1;
   --pledge: #3B6D11;
@@ -12,7 +10,7 @@
 
 body {
   background-color: #eae8e1;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-dm-sans, 'DM Sans', system-ui, sans-serif);
   color: #111;
 }
 
@@ -20,6 +18,10 @@ body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #eae8e1; }
 ::-webkit-scrollbar-thumb { background: #d8d4cc; border-radius: 2px; }
+
+/* Hide scrollbar utility */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Tavern auto-scroll (3x duplication → scroll exactly 1 copy = 33.333%) */
 .tavern-scroll-container {
