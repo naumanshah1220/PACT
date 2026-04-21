@@ -12,11 +12,7 @@ export default function PactHeader() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
       if (!authUser) return
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single()
+      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single()
       if (data) setUser(data)
     })
   }, [])
@@ -32,34 +28,22 @@ export default function PactHeader() {
               <span className="font-mono text-[11px] tracking-[0.18em] uppercase">A Game of Trust</span>
             </div>
           </Link>
-
           <nav className="flex items-center gap-3">
             {user ? (
               <>
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-1.5 bg-white border border-[#d8d4cc] rounded-full px-3 py-1.5 font-mono text-xs"
-                >
+                <Link href="/profile" className="flex items-center gap-1.5 bg-white border border-[#d8d4cc] rounded-full px-3 py-1.5 font-mono text-xs">
                   <div style={{ isolation: 'isolate', backgroundColor: 'white' }}>
-                    <img src="/icons/coin.png" alt="" width={24} height={24} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+                    <img src="/icons/coin.png" alt="" width={36} height={36} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
                   </div>
                   <span className="font-medium">{user.gold_balance}</span>
                   <span className="text-[#888]">Gold</span>
                 </Link>
-                <Link
-                  href="/profile"
-                  className="w-8 h-8 rounded-full bg-[#f0ede6] border border-[#d8d4cc] flex items-center justify-center font-mono text-xs font-medium"
-                >
+                <Link href="/profile" className="w-8 h-8 rounded-full bg-[#f0ede6] border border-[#d8d4cc] flex items-center justify-center font-mono text-xs font-medium">
                   {user.display_initials}
                 </Link>
               </>
             ) : (
-              <Link
-                href="/login"
-                className="font-mono text-xs border border-[#d8d4cc] rounded-full px-3 py-1.5 hover:bg-white transition-colors"
-              >
-                Sign in
-              </Link>
+              <Link href="/login" className="font-mono text-xs border border-[#d8d4cc] rounded-full px-3 py-1.5 hover:bg-white transition-colors">Sign in</Link>
             )}
           </nav>
         </div>
