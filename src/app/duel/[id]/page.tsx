@@ -4,6 +4,8 @@ import DuelRoom from './DuelRoom'
 import PactHeader from '@/components/PactHeader'
 import BanBanner from '@/components/BanBanner'
 
+export const revalidate = 0
+
 export default async function DuelPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()

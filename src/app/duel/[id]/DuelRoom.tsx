@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/Avatar'
+import { isBotId } from '@/lib/bots'
 import type { DuelWithUsers, MessageWithUser } from '@/types/database'
 
 interface Props {
@@ -13,23 +14,24 @@ interface Props {
   currentUserId: string
 }
 
-function TimerBar({ deadline }: { deadline: string }) {
+function TimerBar({ deadline, timerMinutes }: { deadline: string; timerMinutes: number }) {
   const [pct, setPct] = useState(100)
   const [label, setLabel] = useState('')
 
   useEffect(() => {
+    const totalMs = timerMinutes * 60 * 1000
     function tick() {
       const remaining = Math.max(0, new Date(deadline).getTime() - Date.now())
       const h = Math.floor(remaining / 3600000)
       const m = Math.floor((remaining % 3600000) / 60000)
       const s = Math.floor((remaining % 60000) / 1000)
       setLabel(h > 0 ? `${h}h ${m}m left` : m > 0 ? `${m}m ${s}s left` : `${s}s left`)
-      setPct(Math.max(0, (remaining / (1000 * 60 * 60 * 24)) * 100))
+      setPct(Math.max(0, (remaining / totalMs) * 100))
     }
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [deadline])
+  }, [deadline, timerMinutes])
 
   return (
     <div className="px-4 py-3 border-b border-[#d8d4cc]">
@@ -48,7 +50,7 @@ function TimerBar({ deadline }: { deadline: string }) {
 }
 
 export default function DuelRoom({ duel, initialMessages, currentUserId }: Props) {
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
   const router = useRouter()
   const [messages, setMessages] = useState<MessageWithUser[]>(initialMessages)
   const [input, setInput] = useState('')
@@ -57,24 +59,32 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const [liveDuel, setLiveDuel] = useState(duel)
   const [sealLoading, setSealLoading] = useState(false)
   const [showRaven, setShowRaven] = useState(false)
+  const [hasSentMessage, setHasSentMessage] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const isP1 = currentUserId === duel.player1_id
   const opponent = isP1 ? duel.player2 : duel.player1
-  const opponentIsBot = !!(opponent as any).is_bot
+  // Use raw duel FK columns, not the joined user object, which may lack .id
+  const opponentId = isP1 ? duel.player2_id : duel.player1_id
+  const opponentIsBot = isBotId(opponentId) || !!(opponent as any).is_bot
+
+  const savedDecision = isP1 ? duel.player1_decision : duel.player2_decision
+  // decisionConfirmed gates the seal button — only true once the DB has the decision
+  const [decisionConfirmed, setDecisionConfirmed] = useState(!!savedDecision)
 
   useEffect(() => {
-    const saved = isP1 ? duel.player1_decision : duel.player2_decision
-    if (saved) setDecision(saved as 'pledge' | 'betray')
+    if (savedDecision) setDecision(savedDecision as 'pledge' | 'betray')
   }, [])
 
   useEffect(() => {
     const channel = supabase
       .channel(`duel-messages-${duel.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `duel_id=eq.${duel.id}` },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
+          if (payload.new.duel_id !== duel.id) return
           const { data } = await supabase.from('messages').select('*, users(*)').eq('id', payload.new.id).single()
           if (data) setMessages(prev => {
+            if (prev.some(m => m.id === (data as MessageWithUser).id)) return prev
             const optIdx = prev.findIndex(m =>
               m.id.startsWith('opt-') &&
               m.sender_id === (data as MessageWithUser).sender_id &&
@@ -95,8 +105,9 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   useEffect(() => {
     const channel = supabase
       .channel(`duel-state-${duel.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: `id=eq.${duel.id}` },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels' },
         (payload) => {
+          if (payload.new.id !== duel.id) return
           setLiveDuel(prev => ({ ...prev, ...payload.new }))
           if (payload.new.status === 'completed') router.push(`/result/${duel.id}`)
         })
@@ -127,23 +138,31 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     return () => clearTimeout(t)
   }, [])
 
-  const myMessaged = isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged
-  const bothMessaged = opponentIsBot
-    ? myMessaged
-    : (liveDuel.player1_messaged && liveDuel.player2_messaged)
+  const myMessaged = hasSentMessage
+    || messages.some(m => m.sender_id === currentUserId)
+    || (isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged)
 
-  const myDecision = isP1 ? liveDuel.player1_decision : liveDuel.player2_decision
-  const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
-  const canSeal = !!myDecision && opponentDecided
+  // Use opponentId (raw FK value) not opponent.id (joined object) for reliable matching
+  const opponentHasMessaged = messages.some(m => m.sender_id === opponentId)
+    || (isP1 ? liveDuel.player2_messaged : liveDuel.player1_messaged)
+
+  const bothMessaged = opponentIsBot ? myMessaged : (myMessaged && opponentHasMessaged)
+
+  const myDecision = (isP1 ? liveDuel.player1_decision : liveDuel.player2_decision) ?? decision
+  const opponentDecided = opponentIsBot || (isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision)
+  // canSeal requires decisionConfirmed so the DB has the decision before seal-duel reads it
+  const canSeal = !!myDecision && decisionConfirmed && opponentDecided
   const iHaveSealed = liveDuel.seal_requested_by === currentUserId
   const theyHaveSealed = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
   const ravenAlreadySent = messages.some(m => m.content === '— a raven was sent —')
 
   async function sendMessage() {
     if (!input.trim() || sending) return
+    setHasSentMessage(true)
     setSending(true)
     const content = input.trim()
     setInput('')
+
     const myProfile = isP1 ? duel.player1 : duel.player2
     setMessages(prev => [...prev, {
       id: `opt-${Date.now()}`,
@@ -153,26 +172,41 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       created_at: new Date().toISOString(),
       users: myProfile,
     } as MessageWithUser])
-    const field = isP1 ? 'player1_messaged' : 'player2_messaged'
-    await Promise.all([
-      supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
-      supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
-    ])
-    if (opponentIsBot) {
-      fetch('/api/bot-reply', {
+
+    try {
+      const res = await fetch('/api/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ duelId: duel.id, botId: opponent.id }),
+        body: JSON.stringify({ duelId: duel.id, content }),
       })
+      const data = await res.json()
+      if (data.messages) setMessages(data.messages as MessageWithUser[])
+    } catch {
+      // optimistic message stays visible
+    } finally {
+      setSending(false)
     }
-    setSending(false)
   }
 
   async function makeDecision(d: 'pledge' | 'betray') {
-    if (!bothMessaged) return
+    if (!bothMessaged || decision) return
     setDecision(d)
-    const field = isP1 ? 'player1_decision' : 'player2_decision'
-    await supabase.from('duels').update({ [field]: d }).eq('id', duel.id)
+    try {
+      const res = await fetch('/api/make-decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duelId: duel.id, decision: d }),
+      })
+      if (res.ok) {
+        const field = isP1 ? 'player1_decision' : 'player2_decision'
+        setLiveDuel(prev => ({ ...prev, [field]: d }))
+        setDecisionConfirmed(true)
+      } else {
+        setDecision(null)
+      }
+    } catch {
+      setDecision(null)
+    }
   }
 
   async function sendRaven() {
@@ -191,7 +225,11 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       body: JSON.stringify({ duelId: duel.id }),
     })
     const data = await res.json()
-    if (data.resolved) router.push(`/result/${duel.id}`)
+    if (data.resolved) {
+      window.location.href = `/result/${duel.id}`
+      return
+    }
+    setLiveDuel(prev => ({ ...prev, seal_requested_by: currentUserId }))
     setSealLoading(false)
   }
 
@@ -200,10 +238,12 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       <div className="px-4 py-3 border-b border-[#d8d4cc] flex items-center justify-between">
         <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">&larr; Back</Link>
         <span className="font-serif text-lg">The Duel</span>
-        <span className="font-mono text-xs flex items-center gap-1">
-          <img src="/icons/coin.png" alt="" className="w-4 h-4 object-contain mix-blend-multiply" />
-          {duel.wagers.gold_amount} gold at stake
-        </span>
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }}>
+            <img src="/icons/coin.png" alt="" width={42} height={42} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+          </div>
+          <span>{duel.wagers.gold_amount} gold at stake</span>
+        </div>
       </div>
 
       <div className="bg-[#f2f0eb] border-b border-[#d8d4cc] px-4 py-3 flex items-center justify-between">
@@ -218,7 +258,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </div>
       </div>
 
-      <TimerBar deadline={duel.deadline} />
+      <TimerBar deadline={duel.deadline} timerMinutes={duel.wagers.timer_minutes} />
 
       {showRaven && !ravenAlreadySent && (
         <div className="mx-4 mt-2">
@@ -226,7 +266,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
             onClick={sendRaven}
             className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:border-[#aaa] hover:text-[#111] transition-colors flex items-center justify-center gap-2"
           >
-            <img src="/icons/raven.png" alt="" className="w-4 h-4 object-contain mix-blend-multiply" />
+            <img src="/icons/raven.png" alt="" width={42} height={42} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Send Raven
           </button>
         </div>
@@ -280,63 +320,71 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </button>
       </div>
 
-      <div className="isolate px-4 pt-4 pb-2 border-t border-[#d8d4cc] bg-white">
+      <div className="px-4 pt-4 pb-2 border-t border-[#d8d4cc] bg-white isolate">
         {!bothMessaged && (
           <p className="font-mono text-[10px] text-[#888] text-center mb-3 uppercase tracking-widest">
             {opponentIsBot ? 'Send a message to unlock your decision' : 'Both must speak before deciding'}
           </p>
         )}
         <div className="flex gap-3">
-          <button onClick={() => makeDecision('pledge')} disabled={!bothMessaged}
+          <button onClick={() => makeDecision('pledge')} disabled={!bothMessaged || !!decision}
             className={`flex-1 py-3 rounded-xl border-2 font-sans text-sm font-medium transition-all flex items-center justify-center gap-2 ${
               !bothMessaged ? 'opacity-30 cursor-not-allowed border-[#d8d4cc] text-[#888]'
               : decision === 'pledge' ? 'border-[#3B6D11] bg-[#3B6D11]/10 text-[#3B6D11]'
+              : decision ? 'opacity-40 border-[#d8d4cc] text-[#888]'
               : 'border-[#d8d4cc] hover:border-[#3B6D11] hover:text-[#3B6D11]'
             }`}>
-            <img src="/icons/pledge.png" alt="" className="w-5 h-5 object-contain mix-blend-multiply" />
+            <img src="/icons/pledge.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Pledge
           </button>
-          <button onClick={() => makeDecision('betray')} disabled={!bothMessaged}
+          <button onClick={() => makeDecision('betray')} disabled={!bothMessaged || !!decision}
             className={`flex-1 py-3 rounded-xl border-2 font-sans text-sm font-medium transition-all flex items-center justify-center gap-2 ${
               !bothMessaged ? 'opacity-30 cursor-not-allowed border-[#d8d4cc] text-[#888]'
               : decision === 'betray' ? 'border-[#993C1D] bg-[#993C1D]/10 text-[#993C1D]'
+              : decision ? 'opacity-40 border-[#d8d4cc] text-[#888]'
               : 'border-[#d8d4cc] hover:border-[#993C1D] hover:text-[#993C1D]'
             }`}>
-            <img src="/icons/betray.png" alt="" className="w-5 h-5 object-contain mix-blend-multiply" />
+            <img src="/icons/betray.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Betray
           </button>
         </div>
 
+        {decision && !decisionConfirmed && (
+          <p className="font-mono text-[10px] text-[#aaa] text-center mt-3">Saving decision…</p>
+        )}
+
         {canSeal && (
           <div className="flex justify-center mt-4">
             {iHaveSealed ? (
-              <div className="w-[72px] h-[72px] rounded-full border border-[#d8d4cc] flex flex-col items-center justify-center text-center">
-                <img src="/icons/seal.png" alt="" className="w-8 h-8 object-contain mix-blend-multiply opacity-40" />
-                <span className="font-mono text-[7px] uppercase tracking-wider text-[#aaa] mt-0.5">Placed</span>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-[180px] h-[180px] rounded-full border border-[#d8d4cc] flex items-center justify-center overflow-hidden opacity-50">
+                  <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
+                </div>
+                <span className="font-mono text-[8px] tracking-wider uppercase text-[#aaa]">Seal placed</span>
               </div>
             ) : theyHaveSealed ? (
               <div className="text-center">
-                <p className="font-mono text-[11px] text-[#3B6D11] mb-2">Opponent sealed. Confirm below.</p>
-                <button onClick={requestSeal} disabled={sealLoading}
-                  className="w-[72px] h-[72px] rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex flex-col items-center justify-center hover:bg-[#3B6D11]/20 transition-colors mx-auto">
-                  {sealLoading ? <span className="text-sm">…</span> : (
-                    <>
-                      <img src="/icons/seal.png" alt="" className="w-8 h-8 object-contain mix-blend-multiply" />
-                      <span className="font-mono text-[7px] uppercase tracking-wider text-[#3B6D11] mt-0.5">Confirm</span>
-                    </>
-                  )}
-                </button>
+                <p className="font-mono text-[11px] text-[#3B6D11] mb-3">Opponent sealed. Confirm below.</p>
+                <div className="flex flex-col items-center gap-2">
+                  <button onClick={requestSeal} disabled={sealLoading}
+                    className="w-[180px] h-[180px] rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex items-center justify-center overflow-hidden hover:bg-[#3B6D11] transition-colors mx-auto disabled:opacity-40">
+                    {sealLoading ? <span className="font-mono text-sm text-[#3B6D11]">…</span> : (
+                      <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
+                    )}
+                  </button>
+                  <span className="font-mono text-[8px] tracking-wider uppercase text-[#3B6D11]">Confirm Seal</span>
+                </div>
               </div>
             ) : (
-              <button onClick={requestSeal} disabled={sealLoading}
-                className="w-[72px] h-[72px] rounded-full border border-[#111] flex flex-col items-center justify-center hover:bg-[#111] hover:text-white transition-colors disabled:opacity-40 group">
-                {sealLoading ? <span className="text-sm">…</span> : (
-                  <>
-                    <img src="/icons/seal.png" alt="" className="w-8 h-8 object-contain mix-blend-multiply group-hover:opacity-80" />
-                    <span className="font-mono text-[7px] uppercase tracking-wider text-[#111] group-hover:text-white mt-0.5 transition-colors">Seal</span>
-                  </>
-                )}
-              </button>
+              <div className="flex flex-col items-center gap-2">
+                <button onClick={requestSeal} disabled={sealLoading}
+                  className="w-[180px] h-[180px] rounded-full border border-[#111] flex items-center justify-center overflow-hidden hover:bg-[#111] transition-colors disabled:opacity-40">
+                  {sealLoading ? <span className="font-mono text-sm">…</span> : (
+                    <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
+                  )}
+                </button>
+                <span className="font-mono text-[8px] tracking-wider uppercase text-[#888]">Invoke the Seal</span>
+              </div>
             )}
           </div>
         )}

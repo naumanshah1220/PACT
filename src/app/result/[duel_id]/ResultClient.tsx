@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import type { DuelWithUsers } from '@/types/database'
 
 type Outcome = NonNullable<DuelWithUsers['outcome']>
@@ -23,30 +22,22 @@ const OUTCOME_CONFIG: Record<Outcome, {
   p1_betray: {
     icon: '/icons/betray.png',
     title: 'Betrayal.',
-    subtitleFn: (isP1, stake) => isP1
-      ? `You betrayed your opponent. You gained ${stake} Gold.`
-      : `Your opponent betrayed you. You lost ${stake} Gold.`,
+    subtitleFn: (isP1, stake) => isP1 ? `You betrayed your opponent. You gained ${stake} Gold.` : `Your opponent betrayed you. You lost ${stake} Gold.`,
   },
   p2_betray: {
     icon: '/icons/betray.png',
     title: 'Betrayal.',
-    subtitleFn: (isP1, stake) => isP1
-      ? `Your opponent betrayed you. You lost ${stake} Gold.`
-      : `You betrayed your opponent. You gained ${stake} Gold.`,
+    subtitleFn: (isP1, stake) => isP1 ? `Your opponent betrayed you. You lost ${stake} Gold.` : `You betrayed your opponent. You gained ${stake} Gold.`,
   },
   p1_silent: {
     icon: '/icons/raven.png',
     title: 'Silence.',
-    subtitleFn: (isP1, stake) => isP1
-      ? `You said nothing. You lost ${stake} Gold and are banished for 24 hours.`
-      : `Your opponent was silent. You gained ${stake} Gold.`,
+    subtitleFn: (isP1, stake) => isP1 ? `You said nothing. You lost ${stake} Gold and are banished for 24 hours.` : `Your opponent was silent. You gained ${stake} Gold.`,
   },
   p2_silent: {
     icon: '/icons/raven.png',
     title: 'Silence.',
-    subtitleFn: (isP1, stake) => isP1
-      ? `Your opponent was silent. You gained ${stake} Gold.`
-      : `You said nothing. You lost ${stake} Gold and are banished for 24 hours.`,
+    subtitleFn: (isP1, stake) => isP1 ? `Your opponent was silent. You gained ${stake} Gold.` : `You said nothing. You lost ${stake} Gold and are banished for 24 hours.`,
   },
   both_silent: {
     icon: '/icons/raven.png',
@@ -83,23 +74,14 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
   const stake = duel.wagers.gold_amount
   const goldDelta = getGoldDelta(outcome, isP1, stake)
   const subtitle = config.subtitleFn(isP1, stake)
-
   const shareText = `I played PACT and ${outcome === 'both_pledge' ? 'we both pledged' : outcome.includes('betray') ? 'there was betrayal' : 'silence fell'} — ${stake} Gold at stake. Play at pact.game`
-
-  function shareOnX() {
-    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')
-  }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-16">
       <div className="flex items-center gap-6 mb-10 animate-slide-in-left">
         <div className="w-px h-20 bg-[#d8d4cc] shrink-0" />
         <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }}>
-          <img
-            src={config.icon}
-            alt=""
-            style={{ width: 96, height: 96, objectFit: 'contain', mixBlendMode: 'multiply' }}
-          />
+          <img src={config.icon} alt="" width={288} height={288} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
         </div>
       </div>
 
@@ -107,27 +89,25 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
 
       <div className="flex items-center gap-2.5 mb-3">
         <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }}>
-          <img src="/icons/coin.png" alt="" style={{ width: 48, height: 48, objectFit: 'contain', mixBlendMode: 'multiply' }} />
+          <img src="/icons/coin.png" alt="" width={120} height={120} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
         </div>
-        <span className="font-fell text-3xl text-[#1a1208]">
-          {goldDelta > 0 ? `+${goldDelta}` : `${goldDelta}`}
-        </span>
+        <span className="font-fell text-3xl text-[#1a1208]">{goldDelta > 0 ? `+${goldDelta}` : `${goldDelta}`}</span>
       </div>
 
       <p className="font-mono text-sm text-[#555] mb-10">{subtitle}</p>
 
       <div className="flex flex-col gap-3">
-        <Link
-          href="/"
-          className="inline-block border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
+        <button
+          onClick={() => { window.location.href = '/' }}
+          className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors w-full"
         >
           Back to Tavern
-        </Link>
+        </button>
         <button
-          onClick={shareOnX}
+          onClick={() => window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')}
           className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
         >
-          Share on X
+          Share on ⋯
         </button>
       </div>
     </main>
