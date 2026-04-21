@@ -170,37 +170,42 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       users: myProfile,
     } as MessageWithUser])
 
-    const field = isP1 ? 'player1_messaged' : 'player2_messaged'
-    await Promise.all([
-      supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
-      supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
-    ])
-    setLiveDuel(prev => ({ ...prev, [field]: true }))
+    try {
+      const field = isP1 ? 'player1_messaged' : 'player2_messaged'
+      await Promise.all([
+        supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
+        supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
+      ])
+      setLiveDuel(prev => ({ ...prev, [field]: true }))
 
-    if (opponentIsBot) {
-      // Await the bot reply, then fetch fresh messages directly — no realtime needed
-      await fetch('/api/bot-reply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ duelId: duel.id, botId: opponent.id }),
-      })
-      const { data: freshMsgs } = await supabase
-        .from('messages')
-        .select('*, users(*)')
-        .eq('duel_id', duel.id)
-        .order('created_at', { ascending: true })
-      if (freshMsgs) setMessages(freshMsgs as MessageWithUser[])
+      if (opponentIsBot) {
+        // Await the bot reply, then fetch fresh messages directly — no realtime needed
+        await fetch('/api/bot-reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ duelId: duel.id, botId: opponent.id }),
+        })
+        const { data: freshMsgs } = await supabase
+          .from('messages')
+          .select('*, users(*)')
+          .eq('duel_id', duel.id)
+          .order('created_at', { ascending: true })
+        if (freshMsgs) setMessages(freshMsgs as MessageWithUser[])
+      }
+    } finally {
+      setSending(false)
     }
-
-    setSending(false)
   }
 
-  async function makeDecision(d: 'pledge' | 'betray') {
+  // Synchronous — state updates fire in the same event-handler batch so the
+  // seal button appears in the same frame as the button click.
+  function makeDecision(d: 'pledge' | 'betray') {
     if (!bothMessaged) return
     setDecision(d)
     const field = isP1 ? 'player1_decision' : 'player2_decision'
     setLiveDuel(prev => ({ ...prev, [field]: d }))
-    await supabase.from('duels').update({ [field]: d }).eq('id', duel.id)
+    // Fire DB update in background — no await needed here
+    supabase.from('duels').update({ [field]: d }).eq('id', duel.id)
   }
 
   async function sendRaven() {
