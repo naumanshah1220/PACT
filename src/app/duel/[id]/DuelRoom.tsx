@@ -356,7 +356,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
             {iHaveSealed ? (
               <div className="flex flex-col items-center gap-2">
                 <div className="w-[180px] h-[180px] rounded-full border border-[#d8d4cc] flex items-center justify-center overflow-hidden opacity-50">
-                  <img src="/icons/seal.png" alt="" className="w-full h-full object-contain" style={{ mixBlendMode: 'multiply' }} />
+                  <img src="/icons/seal.png" alt="" className="w-16 h-16 object-contain" style={{ mixBlendMode: 'multiply' }} />
                 </div>
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#aaa]">Seal placed</span>
               </div>
@@ -367,7 +367,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
                   <button onClick={requestSeal} disabled={sealLoading}
                     className="w-[180px] h-[180px] rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex items-center justify-center overflow-hidden hover:bg-[#3B6D11] transition-colors mx-auto disabled:opacity-40">
                     {sealLoading ? <span className="font-mono text-sm text-[#3B6D11]">…</span> : (
-                      <img src="/icons/seal.png" alt="" className="w-full h-full object-contain" style={{ mixBlendMode: 'multiply' }} />
+                      <img src="/icons/seal.png" alt="" className="w-16 h-16 object-contain" style={{ mixBlendMode: 'multiply' }} />
                     )}
                   </button>
                   <span className="font-mono text-[8px] tracking-wider uppercase text-[#3B6D11]">Confirm Seal</span>
@@ -378,7 +378,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
                 <button onClick={requestSeal} disabled={sealLoading}
                   className="w-[180px] h-[180px] rounded-full border border-[#111] flex items-center justify-center overflow-hidden hover:bg-[#111] transition-colors disabled:opacity-40">
                   {sealLoading ? <span className="font-mono text-sm">…</span> : (
-                    <img src="/icons/seal.png" alt="" className="w-full h-full object-contain" style={{ mixBlendMode: 'multiply' }} />
+                    <img src="/icons/seal.png" alt="" className="w-16 h-16 object-contain" style={{ mixBlendMode: 'multiply' }} />
                   )}
                 </button>
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#888]">Invoke the Seal</span>
