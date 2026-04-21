@@ -129,7 +129,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   const myMessaged = isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged
   const bothMessaged = opponentIsBot ? myMessaged : (liveDuel.player1_messaged && liveDuel.player2_messaged)
-  const myDecision = isP1 ? liveDuel.player1_decision : liveDuel.player2_decision
+  // Use local decision state (set optimistically) in addition to liveDuel for canSeal
+  const myDecision = (isP1 ? liveDuel.player1_decision : liveDuel.player2_decision) ?? decision
   const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
   const canSeal = !!myDecision && opponentDecided
   const iHaveSealed = liveDuel.seal_requested_by === currentUserId
@@ -157,6 +158,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
       supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
     ])
+    // Optimistic update so pledge/betray unlock immediately without waiting for realtime
+    setLiveDuel(prev => ({ ...prev, [field]: true }))
 
     if (opponentIsBot) {
       fetch('/api/bot-reply', {
@@ -173,6 +176,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     if (!bothMessaged) return
     setDecision(d)
     const field = isP1 ? 'player1_decision' : 'player2_decision'
+    // Optimistic update so canSeal shows immediately after both decide
+    setLiveDuel(prev => ({ ...prev, [field]: d }))
     await supabase.from('duels').update({ [field]: d }).eq('id', duel.id)
   }
 
@@ -192,7 +197,12 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       body: JSON.stringify({ duelId: duel.id }),
     })
     const data = await res.json()
-    if (data.resolved) router.push(`/result/${duel.id}`)
+    if (data.resolved) {
+      router.push(`/result/${duel.id}`)
+    } else {
+      // Optimistic update so seal UI switches to "placed" immediately
+      setLiveDuel(prev => ({ ...prev, seal_requested_by: currentUserId }))
+    }
     setSealLoading(false)
   }
 
@@ -203,7 +213,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         <span className="font-serif text-lg">The Duel</span>
         <div className="flex items-center gap-1.5 font-mono text-xs">
           <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }}>
-            <img src="/icons/coin.png" alt="" width={28} height={28} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <img src="/icons/coin.png" alt="" width={42} height={42} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
           </div>
           <span>{duel.wagers.gold_amount} gold at stake</span>
         </div>
@@ -229,7 +239,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
             onClick={sendRaven}
             className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:border-[#aaa] hover:text-[#111] transition-colors flex items-center justify-center gap-2"
           >
-            <img src="/icons/raven.png" alt="" width={28} height={28} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <img src="/icons/raven.png" alt="" width={42} height={42} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Send Raven
           </button>
         </div>
@@ -296,7 +306,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
               : decision === 'pledge' ? 'border-[#3B6D11] bg-[#3B6D11]/10 text-[#3B6D11]'
               : 'border-[#d8d4cc] hover:border-[#3B6D11] hover:text-[#3B6D11]'
             }`}>
-            <img src="/icons/pledge.png" alt="" width={40} height={40} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <img src="/icons/pledge.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Pledge
           </button>
           <button onClick={() => makeDecision('betray')} disabled={!bothMessaged}
@@ -305,7 +315,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
               : decision === 'betray' ? 'border-[#993C1D] bg-[#993C1D]/10 text-[#993C1D]'
               : 'border-[#d8d4cc] hover:border-[#993C1D] hover:text-[#993C1D]'
             }`}>
-            <img src="/icons/betray.png" alt="" width={40} height={40} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <img src="/icons/betray.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Betray
           </button>
         </div>
@@ -314,8 +324,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
           <div className="flex justify-center mt-4">
             {iHaveSealed ? (
               <div className="flex flex-col items-center gap-2">
-                <div className="w-[88px] h-[88px] rounded-full border border-[#d8d4cc] flex items-center justify-center overflow-hidden opacity-50">
-                  <img src="/icons/seal.png" alt="" width={110} height={110} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+                <div className="w-[180px] h-[180px] rounded-full border border-[#d8d4cc] flex items-center justify-center overflow-hidden opacity-50">
+                  <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
                 </div>
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#aaa]">Seal placed</span>
               </div>
@@ -324,9 +334,9 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
                 <p className="font-mono text-[11px] text-[#3B6D11] mb-3">Opponent sealed. Confirm below.</p>
                 <div className="flex flex-col items-center gap-2">
                   <button onClick={requestSeal} disabled={sealLoading}
-                    className="w-[88px] h-[88px] rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex items-center justify-center overflow-hidden hover:bg-[#3B6D11] transition-colors mx-auto disabled:opacity-40">
+                    className="w-[180px] h-[180px] rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex items-center justify-center overflow-hidden hover:bg-[#3B6D11] transition-colors mx-auto disabled:opacity-40">
                     {sealLoading ? <span className="font-mono text-sm text-[#3B6D11]">…</span> : (
-                      <img src="/icons/seal.png" alt="" width={110} height={110} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+                      <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
                     )}
                   </button>
                   <span className="font-mono text-[8px] tracking-wider uppercase text-[#3B6D11]">Confirm Seal</span>
@@ -335,9 +345,9 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <button onClick={requestSeal} disabled={sealLoading}
-                  className="w-[88px] h-[88px] rounded-full border border-[#111] flex items-center justify-center overflow-hidden hover:bg-[#111] transition-colors disabled:opacity-40">
+                  className="w-[180px] h-[180px] rounded-full border border-[#111] flex items-center justify-center overflow-hidden hover:bg-[#111] transition-colors disabled:opacity-40">
                   {sealLoading ? <span className="font-mono text-sm">…</span> : (
-                    <img src="/icons/seal.png" alt="" width={110} height={110} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+                    <img src="/icons/seal.png" alt="" width={240} height={240} style={{ minWidth: 240, mixBlendMode: 'multiply', objectFit: 'contain' }} />
                   )}
                 </button>
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#888]">Invoke the Seal</span>
