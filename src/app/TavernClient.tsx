@@ -226,12 +226,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     <main className="max-w-2xl mx-auto px-4 py-6">
       <TutorialModal />
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-1.5 border border-[#d8d4cc] rounded-full px-3 py-1.5">
-          <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
-          <span className="font-fell text-sm">{currentUser?.gold_balance ?? '—'}</span>
-          <span className="font-mono text-[10px] text-[#888]">Gold</span>
-        </div>
+      <div className="flex justify-end mb-6">
         {currentUser ? (
           <button onClick={() => setShowModal(true)} className="bg-[#1a1208] text-[#EEEDE4] font-mono text-[11px] rounded-full px-4 py-1.5 hover:opacity-90 transition-opacity">+ Post challenge</button>
         ) : (
