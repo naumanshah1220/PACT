@@ -226,7 +226,13 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     <main className="max-w-2xl mx-auto px-4 py-6">
       <TutorialModal />
 
-      <div className="flex justify-end mb-6">
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => window.dispatchEvent(new Event('open-tutorial'))}
+          className="font-mono text-[11px] text-[#888] border border-[#d8d4cc] rounded-full w-7 h-7 flex items-center justify-center hover:bg-[#f0ede6] hover:text-[#111] transition-colors"
+        >
+          ?
+        </button>
         {currentUser ? (
           <button onClick={() => setShowModal(true)} className="bg-[#1a1208] text-[#EEEDE4] font-mono text-[11px] rounded-full px-4 py-1.5 hover:opacity-90 transition-opacity">+ Post challenge</button>
         ) : (
