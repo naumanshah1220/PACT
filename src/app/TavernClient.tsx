@@ -57,6 +57,14 @@ function timeLeft(deadline: string) {
   return `${m}m left`
 }
 
+function CoinIcon({ size = 56, bg = '#f5f3ea' }: { size?: number; bg?: string }) {
+  return (
+    <div style={{ isolation: 'isolate', backgroundColor: bg }}>
+      <img src="/icons/coin.png" alt="" width={size} height={size} className="object-contain flex-shrink-0" style={{ mixBlendMode: 'multiply' }} />
+    </div>
+  )
+}
+
 function ActiveDuelCard({ info }: { info: ActiveDuelInfo }) {
   return (
     <Link href={`/duel/${info.id}`} className="block border border-[#1a1208] rounded-[12px] p-4 hover:-translate-y-0.5 hover:shadow-md transition-all">
@@ -85,9 +93,12 @@ function AFootCard({ duel, index }: { duel: SpectatableDuel; index: number }) {
           <Avatar initials={duel.poster.display_initials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-amber-700 border border-amber-200 rounded px-1 whitespace-nowrap">Afoot</span>
         </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <CoinIcon size={56} bg="#f5f3ea" />
+          <div className="text-right">
+            <span className="font-fell text-2xl leading-none">{duel.goldAmount}</span>
+            <span className="font-mono text-[10px] text-[#888] block">gold</span>
+          </div>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{duel.poster.username}</p>
@@ -145,9 +156,12 @@ function WagerCard({ wager, index, isNewest, currentUserId, isLoggedIn }: {
           <Avatar initials={wager.users.display_initials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Open</span>
         </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <CoinIcon size={56} bg="#f5f3ea" />
+          <div className="text-right">
+            <span className="font-fell text-2xl leading-none">{wager.gold_amount}</span>
+            <span className="font-mono text-[10px] text-[#888] block">gold</span>
+          </div>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{wager.users.username}</p>
@@ -202,9 +216,12 @@ function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLoggedIn: bo
           <Avatar initials={bot.displayInitials} size="sm" />
           <span className="font-mono text-[9px] uppercase tracking-widest text-[#888] border border-[#d8d4cc] rounded px-1 whitespace-nowrap">Practice</span>
         </div>
-        <div className="text-right flex-shrink-0">
-          <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
-          <span className="font-mono text-[10px] text-[#888] block">gold</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <CoinIcon size={56} bg="#f5f3ea" />
+          <div className="text-right">
+            <span className="font-fell text-2xl leading-none">{bot.goldAmount}</span>
+            <span className="font-mono text-[10px] text-[#888] block">gold</span>
+          </div>
         </div>
       </div>
       <p className="font-fell text-sm mb-1">{bot.name}</p>
@@ -300,7 +317,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
     <main className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1.5 border border-[#d8d4cc] rounded-full px-3 py-1.5">
-          <span className="text-amber-600">⬡</span>
+          <CoinIcon size={24} bg="#EEEDE4" />
           <span className="font-fell text-sm">{currentUser?.gold_balance ?? '—'}</span>
           <span className="font-mono text-[10px] text-[#888]">Gold</span>
         </div>
