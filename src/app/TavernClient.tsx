@@ -228,7 +228,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1.5 border border-[#d8d4cc] rounded-full px-3 py-1.5">
-          <span className="text-amber-600">⬡</span>
+          <img src="/icons/coin.png" alt="" className="w-4 h-4 object-contain" style={{ mixBlendMode: 'multiply' }} />
           <span className="font-fell text-sm">{currentUser?.gold_balance ?? '—'}</span>
           <span className="font-mono text-[10px] text-[#888]">Gold</span>
         </div>
@@ -353,9 +353,16 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
         </div>
       )}
 
-      <div className="mt-10 flex gap-4 justify-center">
-        {[{ href: '/nobles', label: 'Nobles' }, { href: '/honors', label: 'Honors' }, { href: '/alms', label: 'Alms' }].map(l => (
-          <Link key={l.href} href={l.href} className="font-mono text-[11px] tracking-widest uppercase text-[#888] hover:text-[#111] transition-colors">{l.label}</Link>
+      <div className="mt-10 flex gap-8 justify-center">
+        {[
+          { href: '/nobles', label: 'Nobles', icon: '/icons/nobles.png' },
+          { href: '/honors', label: 'Honors', icon: '/icons/honors.png' },
+          { href: '/alms', label: 'Alms', icon: '/icons/alms.png' },
+        ].map(l => (
+          <Link key={l.href} href={l.href} className="flex flex-col items-center gap-1.5 group">
+            <img src={l.icon} alt="" className="w-9 h-9 object-contain opacity-50 group-hover:opacity-90 transition-opacity" style={{ mixBlendMode: 'multiply' }} />
+            <span className="font-mono text-[10px] tracking-widest uppercase text-[#888] group-hover:text-[#111] transition-colors">{l.label}</span>
+          </Link>
         ))}
       </div>
 
