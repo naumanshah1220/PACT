@@ -64,17 +64,17 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   const isP1 = currentUserId === duel.player1_id
   const opponent = isP1 ? duel.player2 : duel.player1
-  // isBotId uses hardcoded IDs — no DB column or RLS risk
-  const opponentIsBot = isBotId(opponent.id)
+  // isBotId checks hardcoded UUIDs; is_bot is a DB column fallback
+  const opponentIsBot = isBotId(opponent.id) || !!(opponent as any).is_bot
+
+  const savedDecision = isP1 ? duel.player1_decision : duel.player2_decision
+  // decisionConfirmed gates the seal button — only true once the DB has the decision
+  const [decisionConfirmed, setDecisionConfirmed] = useState(!!savedDecision)
 
   useEffect(() => {
-    const saved = isP1 ? duel.player1_decision : duel.player2_decision
-    if (saved) setDecision(saved as 'pledge' | 'betray')
+    if (savedDecision) setDecision(savedDecision as 'pledge' | 'betray')
   }, [])
 
-  // No server-side filter — client-side check instead.
-  // Server-side filters require WAL filter engine + REPLICA IDENTITY FULL;
-  // subscribing to the full table is more reliable.
   useEffect(() => {
     const channel = supabase
       .channel(`duel-messages-${duel.id}`)
@@ -83,6 +83,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
           if (payload.new.duel_id !== duel.id) return
           const { data } = await supabase.from('messages').select('*, users(*)').eq('id', payload.new.id).single()
           if (data) setMessages(prev => {
+            // Skip if already in state (e.g. arrived via API response)
+            if (prev.some(m => m.id === (data as MessageWithUser).id)) return prev
             const optIdx = prev.findIndex(m =>
               m.id.startsWith('opt-') &&
               m.sender_id === (data as MessageWithUser).sender_id &&
@@ -146,9 +148,9 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const bothMessaged = opponentIsBot ? myMessaged : (myMessaged && opponentHasMessaged)
 
   const myDecision = (isP1 ? liveDuel.player1_decision : liveDuel.player2_decision) ?? decision
-  // Bot always pre-decides at duel creation — no DB read needed for opponentDecided
   const opponentDecided = opponentIsBot || (isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision)
-  const canSeal = !!myDecision && opponentDecided
+  // canSeal requires decisionConfirmed so the DB has the decision before seal-duel reads it
+  const canSeal = !!myDecision && decisionConfirmed && opponentDecided
   const iHaveSealed = liveDuel.seal_requested_by === currentUserId
   const theyHaveSealed = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
   const ravenAlreadySent = messages.some(m => m.content === '— a raven was sent —')
@@ -171,41 +173,39 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     } as MessageWithUser])
 
     try {
-      const field = isP1 ? 'player1_messaged' : 'player2_messaged'
-      await Promise.all([
-        supabase.from('messages').insert({ duel_id: duel.id, sender_id: currentUserId, content }),
-        supabase.from('duels').update({ [field]: true }).eq('id', duel.id),
-      ])
-      setLiveDuel(prev => ({ ...prev, [field]: true }))
-
-      if (opponentIsBot) {
-        // Await the bot reply, then fetch fresh messages directly — no realtime needed
-        await fetch('/api/bot-reply', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ duelId: duel.id, botId: opponent.id }),
-        })
-        const { data: freshMsgs } = await supabase
-          .from('messages')
-          .select('*, users(*)')
-          .eq('duel_id', duel.id)
-          .order('created_at', { ascending: true })
-        if (freshMsgs) setMessages(freshMsgs as MessageWithUser[])
-      }
+      const res = await fetch('/api/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duelId: duel.id, content }),
+      })
+      const data = await res.json()
+      if (data.messages) setMessages(data.messages as MessageWithUser[])
+    } catch {
+      // optimistic message stays visible; user can see their text was typed
     } finally {
       setSending(false)
     }
   }
 
-  // Synchronous — state updates fire in the same event-handler batch so the
-  // seal button appears in the same frame as the button click.
-  function makeDecision(d: 'pledge' | 'betray') {
-    if (!bothMessaged) return
+  async function makeDecision(d: 'pledge' | 'betray') {
+    if (!bothMessaged || decision) return
     setDecision(d)
-    const field = isP1 ? 'player1_decision' : 'player2_decision'
-    setLiveDuel(prev => ({ ...prev, [field]: d }))
-    // Fire DB update in background — no await needed here
-    supabase.from('duels').update({ [field]: d }).eq('id', duel.id)
+    try {
+      const res = await fetch('/api/make-decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duelId: duel.id, decision: d }),
+      })
+      if (res.ok) {
+        const field = isP1 ? 'player1_decision' : 'player2_decision'
+        setLiveDuel(prev => ({ ...prev, [field]: d }))
+        setDecisionConfirmed(true)
+      } else {
+        setDecision(null)
+      }
+    } catch {
+      setDecision(null)
+    }
   }
 
   async function sendRaven() {
@@ -225,10 +225,10 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     })
     const data = await res.json()
     if (data.resolved) {
-      router.push(`/result/${duel.id}`)
-    } else {
-      setLiveDuel(prev => ({ ...prev, seal_requested_by: currentUserId }))
+      window.location.href = `/result/${duel.id}`
+      return
     }
+    setLiveDuel(prev => ({ ...prev, seal_requested_by: currentUserId }))
     setSealLoading(false)
   }
 
@@ -326,25 +326,31 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
           </p>
         )}
         <div className="flex gap-3">
-          <button onClick={() => makeDecision('pledge')} disabled={!bothMessaged}
+          <button onClick={() => makeDecision('pledge')} disabled={!bothMessaged || !!decision}
             className={`flex-1 py-3 rounded-xl border-2 font-sans text-sm font-medium transition-all flex items-center justify-center gap-2 ${
               !bothMessaged ? 'opacity-30 cursor-not-allowed border-[#d8d4cc] text-[#888]'
               : decision === 'pledge' ? 'border-[#3B6D11] bg-[#3B6D11]/10 text-[#3B6D11]'
+              : decision ? 'opacity-40 border-[#d8d4cc] text-[#888]'
               : 'border-[#d8d4cc] hover:border-[#3B6D11] hover:text-[#3B6D11]'
             }`}>
             <img src="/icons/pledge.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Pledge
           </button>
-          <button onClick={() => makeDecision('betray')} disabled={!bothMessaged}
+          <button onClick={() => makeDecision('betray')} disabled={!bothMessaged || !!decision}
             className={`flex-1 py-3 rounded-xl border-2 font-sans text-sm font-medium transition-all flex items-center justify-center gap-2 ${
               !bothMessaged ? 'opacity-30 cursor-not-allowed border-[#d8d4cc] text-[#888]'
               : decision === 'betray' ? 'border-[#993C1D] bg-[#993C1D]/10 text-[#993C1D]'
+              : decision ? 'opacity-40 border-[#d8d4cc] text-[#888]'
               : 'border-[#d8d4cc] hover:border-[#993C1D] hover:text-[#993C1D]'
             }`}>
             <img src="/icons/betray.png" alt="" width={60} height={60} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
             Betray
           </button>
         </div>
+
+        {decision && !decisionConfirmed && (
+          <p className="font-mono text-[10px] text-[#aaa] text-center mt-3">Saving decision…</p>
+        )}
 
         {canSeal && (
           <div className="flex justify-center mt-4">
