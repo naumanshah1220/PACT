@@ -6,7 +6,7 @@ const SLIDES = [
   {
     title: 'Welcome to PACT',
     body: 'A game of trust and gold, played between strangers. Every wager is a test of character — and nerve.',
-    icons: ['/icons/tavern.png'],
+    icons: ['/icons/pledge.png'],
   },
   {
     title: 'Post or Accept a Wager',
@@ -21,7 +21,7 @@ const SLIDES = [
   {
     title: 'Pledge or Betray',
     body: 'Both pledge → each gains 25%. One betrays → they take everything. Both betray → the house keeps it all.',
-    icons: ['/icons/pledge.png', '/icons/betray.png'],
+    icons: ['/icons/betray.png'],
   },
   {
     title: 'Invoke the Seal',
@@ -107,18 +107,17 @@ export default function TutorialModal() {
             transform: animating ? `translateX(${dir < 0 ? '24px' : '-24px'})` : 'translateX(0)',
           }}
         >
-          <div className={`flex justify-center mb-8 gap-6 ${icons.length > 1 ? 'items-end' : ''}`}>
+          <div className="flex justify-center items-end gap-4 mb-8">
             {icons.map((src, i) => (
               <img
                 key={i}
                 src={src}
                 alt=""
                 className="object-contain mix-blend-multiply"
-                style={{ width: icons.length > 1 ? 120 : 160, height: icons.length > 1 ? 120 : 160 }}
+                style={{ width: 160, height: 160 }}
               />
             ))}
           </div>
-
           <h2 className="font-fell text-[2rem] text-[#1a1208] text-center mb-4 leading-tight">{title}</h2>
           <p className="font-mono text-[12px] text-[#555] text-center leading-relaxed mb-10">{body}</p>
         </div>
