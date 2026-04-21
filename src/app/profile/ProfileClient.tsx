@@ -37,12 +37,10 @@ function DuelRow({ duel, userId }: { duel: any; userId: string }) {
           <p className="font-mono text-[10px] text-[#888]">{outcome?.replace(/_/g, ' ')}</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 justify-end">
-        <span className="font-fell text-base text-[#1a1208]">
-          {won ? '+' : lost ? '-' : ''}{stake}
-        </span>
+      <div className="flex items-center gap-1 justify-end">
+        <span className="font-fell text-base text-[#1a1208]">{won ? '+' : lost ? '-' : ''}{stake}</span>
         <div style={{ isolation: 'isolate', backgroundColor: '#f5f3ea' }}>
-          <img src="/icons/coin.png" alt="" width={32} height={32} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+          <img src="/icons/coin.png" alt="" width={48} height={48} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
         </div>
       </div>
     </div>
@@ -91,12 +89,7 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
               </select>
             </div>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="font-mono text-[11px] text-[#888] hover:text-[#111] border border-[#d8d4cc] rounded-full px-3 py-1"
-          >
-            Sign out
-          </button>
+          <button onClick={handleSignOut} className="font-mono text-[11px] text-[#888] hover:text-[#111] border border-[#d8d4cc] rounded-full px-3 py-1">Sign out</button>
         </div>
 
         <div className="mt-5 flex gap-6 items-end">
@@ -104,7 +97,7 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#888] mb-1">Gold</p>
             <div className="flex items-center gap-2">
               <div style={{ isolation: 'isolate', backgroundColor: '#f5f3ea' }}>
-                <img src="/icons/coin.png" alt="" width={72} height={72} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
+                <img src="/icons/coin.png" alt="" width={108} height={108} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
               </div>
               <span className="font-fell text-3xl">{profile.gold_balance}</span>
             </div>
@@ -119,13 +112,7 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
 
       <div className="flex gap-2 mb-4">
         {(['duels', 'share'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`font-mono text-[11px] uppercase tracking-widest px-4 py-1.5 rounded-full border transition-colors ${
-              tab === t ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'
-            }`}
-          >
+          <button key={t} onClick={() => setTab(t)} className={`font-mono text-[11px] uppercase tracking-widest px-4 py-1.5 rounded-full border transition-colors ${tab === t ? 'bg-[#1a1208] text-[#EEEDE4] border-[#1a1208]' : 'text-[#888] border-[#d8d4cc] hover:bg-[#f0ede6]'}`}>
             {t === 'duels' ? 'My Duels' : 'Share'}
           </button>
         ))}
@@ -142,12 +129,7 @@ export default function ProfileClient({ profile, duels }: { profile: UserRow; du
       ) : (
         <div className="bg-[#f5f3ea] border border-[#d8d4cc] rounded-[12px] p-6">
           <p className="font-mono text-sm text-[#888] mb-4">{shareText}</p>
-          <button
-            onClick={() => window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')}
-            className="border border-[#1a1208] rounded-xl px-5 py-2.5 font-mono text-sm hover:bg-[#f0ede6] transition-colors"
-          >
-            Share on ⋯
-          </button>
+          <button onClick={() => window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')} className="border border-[#1a1208] rounded-xl px-5 py-2.5 font-mono text-sm hover:bg-[#f0ede6] transition-colors">Share on ⋯</button>
         </div>
       )}
     </main>
