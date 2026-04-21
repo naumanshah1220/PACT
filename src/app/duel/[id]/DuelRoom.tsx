@@ -62,7 +62,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   const isP1 = currentUserId === duel.player1_id
   const opponent = isP1 ? duel.player2 : duel.player1
-  const opponentIsBot = !!(opponent as any).is_bot
+  // Use wager.practice as the bot signal — structurally set at duel creation, no DB column uncertainty
+  const opponentIsBot = duel.wagers.practice
 
   useEffect(() => {
     const saved = isP1 ? duel.player1_decision : duel.player2_decision
@@ -128,8 +129,14 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     return () => clearTimeout(t)
   }, [])
 
-  const myMessaged = isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged
-  const bothMessaged = opponentIsBot ? myMessaged : (liveDuel.player1_messaged && liveDuel.player2_messaged)
+  // Derive messaged state from messages array (updates optimistically on send)
+  // so buttons unlock the instant the user sends their message, not after a DB round-trip
+  const myMessaged = messages.some(m => m.sender_id === currentUserId)
+    || (isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged)
+  const opponentHasMessaged = messages.some(m => m.sender_id === opponent.id)
+    || (isP1 ? liveDuel.player2_messaged : liveDuel.player1_messaged)
+  const bothMessaged = opponentIsBot ? myMessaged : (myMessaged && opponentHasMessaged)
+
   const myDecision = (isP1 ? liveDuel.player1_decision : liveDuel.player2_decision) ?? decision
   const opponentDecided = isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision
   const canSeal = !!myDecision && opponentDecided
@@ -228,7 +235,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         </div>
       </div>
 
-      <TimerBar deadline={duel.deadline} timerMinutes={(duel.wagers as any).timer_minutes ?? 1440} />
+      <TimerBar deadline={duel.deadline} timerMinutes={duel.wagers.timer_minutes} />
 
       {showRaven && !ravenAlreadySent && (
         <div className="mx-4 mt-2">
