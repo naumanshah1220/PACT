@@ -3,6 +3,8 @@ import { notFound, redirect } from 'next/navigation'
 import ResultClient from './ResultClient'
 import PactHeader from '@/components/PactHeader'
 
+export const revalidate = 0
+
 export default async function ResultPage({ params }: { params: { duel_id: string } }) {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()

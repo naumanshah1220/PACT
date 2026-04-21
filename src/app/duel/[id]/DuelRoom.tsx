@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/Avatar'
+import { isBotId } from '@/lib/bots'
 import type { DuelWithUsers, MessageWithUser } from '@/types/database'
 
 interface Props {
@@ -58,24 +59,28 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const [liveDuel, setLiveDuel] = useState(duel)
   const [sealLoading, setSealLoading] = useState(false)
   const [showRaven, setShowRaven] = useState(false)
-  // Set to true the moment the user sends their first message — no DB round-trip needed
   const [hasSentMessage, setHasSentMessage] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const isP1 = currentUserId === duel.player1_id
   const opponent = isP1 ? duel.player2 : duel.player1
-  const opponentIsBot = duel.wagers.practice
+  // isBotId uses hardcoded IDs — no DB column or RLS risk
+  const opponentIsBot = isBotId(opponent.id)
 
   useEffect(() => {
     const saved = isP1 ? duel.player1_decision : duel.player2_decision
     if (saved) setDecision(saved as 'pledge' | 'betray')
   }, [])
 
+  // No server-side filter — client-side check instead.
+  // Server-side filters require WAL filter engine + REPLICA IDENTITY FULL;
+  // subscribing to the full table is more reliable.
   useEffect(() => {
     const channel = supabase
       .channel(`duel-messages-${duel.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `duel_id=eq.${duel.id}` },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
+          if (payload.new.duel_id !== duel.id) return
           const { data } = await supabase.from('messages').select('*, users(*)').eq('id', payload.new.id).single()
           if (data) setMessages(prev => {
             const optIdx = prev.findIndex(m =>
@@ -98,8 +103,9 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   useEffect(() => {
     const channel = supabase
       .channel(`duel-state-${duel.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: `id=eq.${duel.id}` },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels' },
         (payload) => {
+          if (payload.new.id !== duel.id) return
           setLiveDuel(prev => ({ ...prev, ...payload.new }))
           if (payload.new.status === 'completed') router.push(`/result/${duel.id}`)
         })
@@ -130,9 +136,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     return () => clearTimeout(t)
   }, [])
 
-  // hasSentMessage flips synchronously in sendMessage before any await
-  // messages.some() catches the optimistic message added right after
-  // liveDuel fallback handles re-mounts (e.g. the user already messaged earlier)
   const myMessaged = hasSentMessage
     || messages.some(m => m.sender_id === currentUserId)
     || (isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged)
@@ -143,7 +146,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const bothMessaged = opponentIsBot ? myMessaged : (myMessaged && opponentHasMessaged)
 
   const myDecision = (isP1 ? liveDuel.player1_decision : liveDuel.player2_decision) ?? decision
-  // Bot always pre-decides at duel creation — skip the liveDuel check for practice duels
+  // Bot always pre-decides at duel creation — no DB read needed for opponentDecided
   const opponentDecided = opponentIsBot || (isP1 ? !!liveDuel.player2_decision : !!liveDuel.player1_decision)
   const canSeal = !!myDecision && opponentDecided
   const iHaveSealed = liveDuel.seal_requested_by === currentUserId
@@ -152,7 +155,6 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   async function sendMessage() {
     if (!input.trim() || sending) return
-    // Flip hasSentMessage first — this is the synchronous trigger that unlocks pledge/betray immediately
     setHasSentMessage(true)
     setSending(true)
     const content = input.trim()
@@ -176,11 +178,18 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     setLiveDuel(prev => ({ ...prev, [field]: true }))
 
     if (opponentIsBot) {
-      fetch('/api/bot-reply', {
+      // Await the bot reply, then fetch fresh messages directly — no realtime needed
+      await fetch('/api/bot-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ duelId: duel.id, botId: opponent.id }),
       })
+      const { data: freshMsgs } = await supabase
+        .from('messages')
+        .select('*, users(*)')
+        .eq('duel_id', duel.id)
+        .order('created_at', { ascending: true })
+      if (freshMsgs) setMessages(freshMsgs as MessageWithUser[])
     }
 
     setSending(false)
