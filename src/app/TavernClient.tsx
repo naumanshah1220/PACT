@@ -228,7 +228,7 @@ export default function TavernClient({ initialWagers, currentUser, hoardBalance,
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1.5 border border-[#d8d4cc] rounded-full px-3 py-1.5">
-          <img src="/icons/coin.png" alt="" className="w-4 h-4 object-contain" style={{ mixBlendMode: 'multiply' }} />
+          <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
           <span className="font-fell text-sm">{currentUser?.gold_balance ?? '—'}</span>
           <span className="font-mono text-[10px] text-[#888]">Gold</span>
         </div>
