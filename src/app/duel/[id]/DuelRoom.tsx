@@ -64,8 +64,9 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   const isP1 = currentUserId === duel.player1_id
   const opponent = isP1 ? duel.player2 : duel.player1
-  // isBotId checks hardcoded UUIDs; is_bot is a DB column fallback
-  const opponentIsBot = isBotId(opponent.id) || !!(opponent as any).is_bot
+  // Use raw duel FK columns, not the joined user object, which may lack .id
+  const opponentId = isP1 ? duel.player2_id : duel.player1_id
+  const opponentIsBot = isBotId(opponentId) || !!(opponent as any).is_bot
 
   const savedDecision = isP1 ? duel.player1_decision : duel.player2_decision
   // decisionConfirmed gates the seal button — only true once the DB has the decision
@@ -142,7 +143,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
     || messages.some(m => m.sender_id === currentUserId)
     || (isP1 ? liveDuel.player1_messaged : liveDuel.player2_messaged)
 
-  const opponentHasMessaged = messages.some(m => m.sender_id === opponent.id)
+  // Use opponentId (raw FK value) not opponent.id (joined object) for reliable matching
+  const opponentHasMessaged = messages.some(m => m.sender_id === opponentId)
     || (isP1 ? liveDuel.player2_messaged : liveDuel.player1_messaged)
 
   const bothMessaged = opponentIsBot ? myMessaged : (myMessaged && opponentHasMessaged)
