@@ -42,7 +42,7 @@ export default function PactHeader() {
             {user ? (
               <>
                 <Link href="/profile" className="flex items-center gap-1.5 bg-white border border-[#d8d4cc] rounded-full px-3 py-1.5 font-mono text-xs">
-                  <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                  <img src="/icons/coin.png" alt="" className="w-[18px] h-[18px] object-contain" style={{ mixBlendMode: 'multiply' }} />
                   <span className="font-medium">{user.gold_balance}</span>
                   <span className="text-[#888]">Gold</span>
                 </Link>
