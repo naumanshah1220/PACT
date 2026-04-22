@@ -55,6 +55,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return new Uint8Array([...rawData].map(c => c.charCodeAt(0)))
 }
 
+const pushSupported = typeof window !== 'undefined'
+  && 'Notification' in window
+  && 'serviceWorker' in navigator
+  && 'PushManager' in window
+
 export default function PactHeader() {
   const [user, setUser] = useState<HeaderUser | null>(null)
   const [authUserId, setAuthUserId] = useState<string | null>(null)
@@ -62,6 +67,7 @@ export default function PactHeader() {
   const [notifications, setNotifications] = useState<NotifRow[]>([])
   const [showNotifs, setShowNotifs] = useState(false)
   const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null)
+  const [pushLoading, setPushLoading] = useState(false)
   const supabase = useRef(createClient()).current
   const notifRef = useRef<HTMLDivElement>(null)
 
@@ -94,18 +100,22 @@ export default function PactHeader() {
   }
 
   async function registerAndSubscribe() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    if (!pushSupported) return
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-    if (!vapidKey) return
+    if (!vapidKey) {
+      console.warn('[PACT] Push: NEXT_PUBLIC_VAPID_PUBLIC_KEY not configured')
+      return
+    }
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js')
-      await navigator.serviceWorker.ready
+      await navigator.serviceWorker.register('/sw.js')
+      // Use .ready to get the guaranteed-active registration, not the pending one from register()
+      const reg = await navigator.serviceWorker.ready
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       })
       const json = sub.toJSON()
-      await fetch('/api/push/subscribe', {
+      const res = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,17 +124,26 @@ export default function PactHeader() {
           auth: json.keys?.auth,
         }),
       })
-      setPushPermission('granted')
-    } catch {
-      // SW or push not supported — silently ignore
+      if (res.ok) {
+        setPushPermission('granted')
+      } else {
+        console.error('[PACT] Push subscribe API failed:', await res.text())
+      }
+    } catch (err) {
+      console.error('[PACT] Push registration error:', err)
     }
   }
 
   async function requestPushPermission() {
-    if (!('Notification' in window)) return
-    const perm = await Notification.requestPermission()
-    setPushPermission(perm)
-    if (perm === 'granted') await registerAndSubscribe()
+    if (!pushSupported) return
+    setPushLoading(true)
+    try {
+      const perm = await Notification.requestPermission()
+      setPushPermission(perm)
+      if (perm === 'granted') await registerAndSubscribe()
+    } finally {
+      setPushLoading(false)
+    }
   }
 
   function handleBellClick() {
@@ -132,6 +151,11 @@ export default function PactHeader() {
     setShowNotifs(willOpen)
     if (willOpen) markAllRead()
   }
+
+  // Read permission state immediately on mount — don't wait for authUserId
+  useEffect(() => {
+    if (pushSupported) setPushPermission(Notification.permission)
+  }, [])
 
   useEffect(() => {
     fetchUser()
@@ -154,10 +178,8 @@ export default function PactHeader() {
       })
       .subscribe()
 
-    if ('Notification' in window) {
-      setPushPermission(Notification.permission)
-      if (Notification.permission === 'granted') registerAndSubscribe()
-    }
+    // If already granted, re-register subscription silently (handles subscription loss)
+    if (pushSupported && Notification.permission === 'granted') registerAndSubscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [authUserId])
@@ -180,6 +202,9 @@ export default function PactHeader() {
   }, [])
 
   const unreadCount = notifications.filter(n => !n.read).length
+  const showPushPrompt = pushSupported && pushPermission !== 'granted' && pushPermission !== 'denied'
+  const showPushDenied = pushSupported && pushPermission === 'denied'
+  const showPushUnsupported = !pushSupported && typeof window !== 'undefined'
 
   return (
     <header className="border-b border-[#d8d4cc] bg-[#eae8e1] sticky top-0 z-50">
@@ -261,14 +286,29 @@ export default function PactHeader() {
                           ))}
                         </div>
                       )}
-                      {pushPermission === 'default' && (
+                      {showPushPrompt && (
                         <div className="px-4 py-3 border-t border-[#f0ede6]">
                           <button
                             onClick={requestPushPermission}
-                            className="w-full font-mono text-[10px] text-[#888] hover:text-[#111] transition-colors text-center"
+                            disabled={pushLoading}
+                            className="w-full font-mono text-[10px] text-[#888] hover:text-[#111] transition-colors text-center disabled:opacity-50"
                           >
-                            🔔 Enable push notifications
+                            {pushLoading ? 'Enabling…' : '🔔 Enable push notifications'}
                           </button>
+                        </div>
+                      )}
+                      {showPushDenied && (
+                        <div className="px-4 py-3 border-t border-[#f0ede6]">
+                          <p className="font-mono text-[10px] text-[#bbb] text-center">
+                            Notifications blocked — allow in browser settings
+                          </p>
+                        </div>
+                      )}
+                      {showPushUnsupported && (
+                        <div className="px-4 py-3 border-t border-[#f0ede6]">
+                          <p className="font-mono text-[10px] text-[#bbb] text-center">
+                            Add to home screen to enable push notifications
+                          </p>
                         </div>
                       )}
                     </div>
