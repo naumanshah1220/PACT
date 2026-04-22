@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { DuelWithUsers } from '@/types/database'
 
 type Outcome = NonNullable<DuelWithUsers['outcome']>
@@ -61,6 +62,7 @@ function getGoldDelta(outcome: Outcome, isP1: boolean, stake: number): number {
 export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUsers; currentUserId: string }) {
   const isP1 = currentUserId === duel.player1_id
   const outcome = duel.outcome as Outcome | null
+  const [copied, setCopied] = useState(false)
 
   if (!outcome) {
     return (
@@ -74,7 +76,27 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
   const stake = duel.wagers.gold_amount
   const goldDelta = getGoldDelta(outcome, isP1, stake)
   const subtitle = config.subtitleFn(isP1, stake)
-  const shareText = `I played PACT and ${outcome === 'both_pledge' ? 'we both pledged' : outcome.includes('betray') ? 'there was betrayal' : 'silence fell'} — ${stake} Gold at stake. Play at pact.game`
+
+  // Mystery share — no outcome revealed, Wordle-style intrigue
+  const wagerMsg = duel.wagers.wager_message
+  const shareText = wagerMsg
+    ? `⚔️ PACT — ${stake} Gold\n"${wagerMsg}"\n\nThe seal is broken. Did I honour the pact? 👀\npact.game`
+    : `⚔️ PACT — ${stake} Gold\n\nI just played. The seal is broken.\nDid I honour the pact? 👀\npact.game`
+
+  function handleCopy() {
+    navigator.clipboard.writeText(shareText).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function handleWhatsApp() {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank')
+  }
+
+  function handleTwitter() {
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')
+  }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-16">
@@ -88,9 +110,7 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
       <h1 className="font-fell text-[28px] mb-5">{config.title}</h1>
 
       <div className="flex items-center gap-2.5 mb-3">
-        <div style={{ isolation: 'isolate', backgroundColor: '#EEEDE4' }}>
-          <img src="/icons/coin.png" alt="" width={120} height={120} className="object-contain" style={{ mixBlendMode: 'multiply' }} />
-        </div>
+        <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
         <span className="font-fell text-3xl text-[#1a1208]">{goldDelta > 0 ? `+${goldDelta}` : `${goldDelta}`}</span>
       </div>
 
@@ -104,10 +124,22 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
           Back to Tavern
         </button>
         <button
-          onClick={() => window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')}
+          onClick={handleWhatsApp}
+          className="bg-[#25D366] text-white rounded-xl px-6 py-3 font-mono text-sm text-center hover:opacity-90 transition-opacity"
+        >
+          Share on WhatsApp
+        </button>
+        <button
+          onClick={handleTwitter}
           className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
         >
           Share on ⋯
+        </button>
+        <button
+          onClick={handleCopy}
+          className="border border-[#d8d4cc] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors text-[#888]"
+        >
+          {copied ? 'Copied ✓' : 'Copy message'}
         </button>
       </div>
     </main>
