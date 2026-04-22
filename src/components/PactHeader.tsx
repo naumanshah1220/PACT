@@ -48,12 +48,20 @@ function timeAgo(ts: string): string {
   return `${Math.floor(diff / 86400)}d ago`
 }
 
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = atob(base64)
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)))
+}
+
 export default function PactHeader() {
   const [user, setUser] = useState<HeaderUser | null>(null)
   const [authUserId, setAuthUserId] = useState<string | null>(null)
   const [countdown, setCountdown] = useState('')
   const [notifications, setNotifications] = useState<NotifRow[]>([])
   const [showNotifs, setShowNotifs] = useState(false)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null)
   const supabase = useRef(createClient()).current
   const notifRef = useRef<HTMLDivElement>(null)
 
@@ -85,6 +93,40 @@ export default function PactHeader() {
     await supabase.from('notifications').update({ read: true }).in('id', unreadIds)
   }
 
+  async function registerAndSubscribe() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    if (!vapidKey) return
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      })
+      const json = sub.toJSON()
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: json.endpoint,
+          p256dh: json.keys?.p256dh,
+          auth: json.keys?.auth,
+        }),
+      })
+      setPushPermission('granted')
+    } catch {
+      // SW or push not supported — silently ignore
+    }
+  }
+
+  async function requestPushPermission() {
+    if (!('Notification' in window)) return
+    const perm = await Notification.requestPermission()
+    setPushPermission(perm)
+    if (perm === 'granted') await registerAndSubscribe()
+  }
+
   function handleBellClick() {
     const willOpen = !showNotifs
     setShowNotifs(willOpen)
@@ -111,6 +153,12 @@ export default function PactHeader() {
         setNotifications(prev => [payload.new as NotifRow, ...prev])
       })
       .subscribe()
+
+    if ('Notification' in window) {
+      setPushPermission(Notification.permission)
+      if (Notification.permission === 'granted') registerAndSubscribe()
+    }
+
     return () => { supabase.removeChannel(channel) }
   }, [authUserId])
 
@@ -211,6 +259,16 @@ export default function PactHeader() {
                               )}
                             </a>
                           ))}
+                        </div>
+                      )}
+                      {pushPermission === 'default' && (
+                        <div className="px-4 py-3 border-t border-[#f0ede6]">
+                          <button
+                            onClick={requestPushPermission}
+                            className="w-full font-mono text-[10px] text-[#888] hover:text-[#111] transition-colors text-center"
+                          >
+                            🔔 Enable push notifications
+                          </button>
                         </div>
                       )}
                     </div>
