@@ -21,12 +21,12 @@ export default async function HonorsPage() {
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="mb-8">
           <img src="/icons/honors.png" alt="" className="w-20 h-20 object-contain mix-blend-multiply mb-4" />
-          <h1 className="font-serif text-3xl font-bold">Book of Honours</h1>
+          <h1 className="font-fell text-3xl">Book of Honours</h1>
           <p className="font-mono text-[11px] uppercase tracking-widest text-[#888] mt-1">Earned through generosity. Cannot be purchased.</p>
         </div>
         <HonorsClient initialPlayers={players ?? []} initialOffset={players?.length ?? 0} />
         <div className="mt-8">
-          <Link href="/" className="font-mono text-[11px] text-[#888] hover:text-[#111]">← Tavern</Link>
+          <Link href="/" className="font-mono text-[11px] text-[#888] hover:text-[#111]">&larr; Tavern</Link>
         </div>
       </main>
     </>
