@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { sendPushToUser } from '@/lib/push'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -31,6 +32,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Insufficient gold' }, { status: 400 })
 
   const honorGain = Math.max(1, Math.floor(request.gold_amount * 0.1))
+  const title = `🪙 ${donor.username} gave you ${request.gold_amount} Gold`
+  const link = '/alms'
 
   await Promise.all([
     admin.from('alms_requests').update({ status: 'fulfilled', fulfilled_by: user.id }).eq('id', requestId),
@@ -38,12 +41,8 @@ export async function POST(req: Request) {
     admin.from('users').update({ gold_balance: recipient.gold_balance + request.gold_amount }).eq('id', request.requester_id),
     admin.from('users').update({ honor_score: donor.honor_score + honorGain }).eq('id', user.id),
     admin.from('alms_donations').insert({ donor_id: user.id, recipient_id: request.requester_id, gold_amount: request.gold_amount }),
-    admin.from('notifications').insert({
-      user_id: request.requester_id,
-      type: 'alms_received',
-      title: `🪙 ${donor.username} gave you ${request.gold_amount} Gold`,
-      link: '/alms',
-    }),
+    admin.from('notifications').insert({ user_id: request.requester_id, type: 'alms_received', title, link }),
+    sendPushToUser(admin, request.requester_id, title, link),
   ])
 
   return NextResponse.json({ success: true, honorGain })
