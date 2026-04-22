@@ -77,24 +77,27 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
   const goldDelta = getGoldDelta(outcome, isP1, stake)
   const subtitle = config.subtitleFn(isP1, stake)
 
-  const wagerMsg = duel.wagers.wager_message
-  const shareText = wagerMsg
-    ? `⚔️ PACT — ${stake} Gold\n“${wagerMsg}”\n\nThe seal is broken. Did I honour the pact? 👀\nhttps://pact.game`
-    : `⚔️ PACT — ${stake} Gold\n\nI just played. The seal is broken.\nDid I honour the pact? 👀\nhttps://pact.game`
+  function buildShareText() {
+    const origin = window.location.origin
+    const wagerMsg = duel.wagers.wager_message
+    return wagerMsg
+      ? `⚔️ PACT — ${stake} Gold\n“${wagerMsg}”\n\nThe seal is broken. Did I honour the pact? 👀\n${origin}`
+      : `⚔️ PACT — ${stake} Gold\n\nI just played. The seal is broken.\nDid I honour the pact? 👀\n${origin}`
+  }
 
   function handleCopy() {
-    navigator.clipboard.writeText(shareText).then(() => {
+    navigator.clipboard.writeText(buildShareText()).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
   }
 
   function handleWhatsApp() {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank')
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildShareText())}`, '_blank')
   }
 
   function handleTwitter() {
-    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank')
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(buildShareText())}`, '_blank')
   }
 
   return (
