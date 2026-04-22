@@ -77,11 +77,10 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
   const goldDelta = getGoldDelta(outcome, isP1, stake)
   const subtitle = config.subtitleFn(isP1, stake)
 
-  // Mystery share — no outcome revealed, Wordle-style intrigue
   const wagerMsg = duel.wagers.wager_message
   const shareText = wagerMsg
-    ? `⚔️ PACT — ${stake} Gold\n"${wagerMsg}"\n\nThe seal is broken. Did I honour the pact? 👀\npact.game`
-    : `⚔️ PACT — ${stake} Gold\n\nI just played. The seal is broken.\nDid I honour the pact? 👀\npact.game`
+    ? `⚔️ PACT — ${stake} Gold\n“${wagerMsg}”\n\nThe seal is broken. Did I honour the pact? 👀\nhttps://pact.game`
+    : `⚔️ PACT — ${stake} Gold\n\nI just played. The seal is broken.\nDid I honour the pact? 👀\nhttps://pact.game`
 
   function handleCopy() {
     navigator.clipboard.writeText(shareText).then(() => {
@@ -133,7 +132,7 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
           onClick={handleTwitter}
           className="border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
         >
-          Share on ⋯
+          Share on &#x22EF;
         </button>
         <button
           onClick={handleCopy}
