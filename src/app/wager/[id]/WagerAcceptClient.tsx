@@ -23,6 +23,7 @@ export default function WagerAcceptClient({
   const [loading, setLoading] = useState(false)
   const isOwn = currentUserId === wager.poster_id
   const isClosed = wager.status !== 'open'
+  const redirectPath = `/wager/${wager.id}`
 
   async function handleAccept() {
     if (loading || !currentUserId) return
@@ -90,13 +91,13 @@ export default function WagerAcceptClient({
       ) : (
         <div className="space-y-3 mb-6">
           <Link
-            href="/signup"
+            href={`/signup?redirect=${encodeURIComponent(redirectPath)}`}
             className="block w-full bg-[#1a1208] text-[#EEEDE4] rounded-xl px-6 py-3.5 font-mono text-sm text-center hover:opacity-90 transition-opacity"
           >
             Sign up to accept →
           </Link>
           <Link
-            href="/login"
+            href={`/login?redirect=${encodeURIComponent(redirectPath)}`}
             className="block w-full border border-[#1a1208] rounded-xl px-6 py-3 font-mono text-sm text-center hover:bg-[#f0ede6] transition-colors"
           >
             Already have an account? Sign in
