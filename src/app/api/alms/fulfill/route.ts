@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Cannot fulfill your own request' }, { status: 400 })
 
   const [{ data: donor }, { data: recipient }] = await Promise.all([
-    admin.from('users').select('gold_balance, honor_score').eq('id', user.id).single(),
+    admin.from('users').select('gold_balance, honor_score, username').eq('id', user.id).single(),
     admin.from('users').select('gold_balance').eq('id', request.requester_id).single(),
   ])
 
@@ -38,6 +38,12 @@ export async function POST(req: Request) {
     admin.from('users').update({ gold_balance: recipient.gold_balance + request.gold_amount }).eq('id', request.requester_id),
     admin.from('users').update({ honor_score: donor.honor_score + honorGain }).eq('id', user.id),
     admin.from('alms_donations').insert({ donor_id: user.id, recipient_id: request.requester_id, gold_amount: request.gold_amount }),
+    admin.from('notifications').insert({
+      user_id: request.requester_id,
+      type: 'alms_received',
+      title: `🪙 ${donor.username} gave you ${request.gold_amount} Gold`,
+      link: '/alms',
+    }),
   ])
 
   return NextResponse.json({ success: true, honorGain })
