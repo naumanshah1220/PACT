@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { isBotId } from '@/lib/bots'
+import { sendPushToUser } from '@/lib/push'
 
 const BOT_REPLIES: Record<string, string[]> = {
   '00000000-0000-0000-0001-000000000000': [
@@ -70,7 +71,6 @@ export async function POST(req: Request) {
     admin.from('duels').update({ [playerField]: true }).eq('id', duelId),
   ])
 
-  // Notify the human opponent — but only if they don't already have an unread message notification for this duel
   if (!isBotId(opponentId)) {
     const [{ data: senderProfile }, { count }] = await Promise.all([
       admin.from('users').select('username').eq('id', user.id).single(),
@@ -82,12 +82,12 @@ export async function POST(req: Request) {
         .eq('read', false),
     ])
     if (!count) {
-      await admin.from('notifications').insert({
-        user_id: opponentId,
-        type: 'new_message',
-        title: `💬 ${senderProfile?.username ?? 'Someone'} sent you a message`,
-        link: `/duel/${duelId}`,
-      })
+      const title = `💬 ${senderProfile?.username ?? 'Someone'} sent you a message`
+      const link = `/duel/${duelId}`
+      await Promise.all([
+        admin.from('notifications').insert({ user_id: opponentId, type: 'new_message', title, link }),
+        sendPushToUser(admin, opponentId, title, link),
+      ])
     }
   }
 
