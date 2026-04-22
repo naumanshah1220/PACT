@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { BOT_CONFIG, getBotDecision, isBotId } from '@/lib/bots'
+import { sendPushToUser } from '@/lib/push'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -45,7 +46,6 @@ export async function POST(req: Request) {
     if (!challenger) return NextResponse.json({ error: 'Could not create guest profile' }, { status: 500 })
   }
 
-  // Prevent challenging the same opponent twice
   const { data: sameOpponentDuel } = await admin
     .from('duels').select('id').eq('status', 'active')
     .or(`and(player1_id.eq.${wager.poster_id},player2_id.eq.${user.id}),and(player1_id.eq.${user.id},player2_id.eq.${wager.poster_id})`)
@@ -53,7 +53,6 @@ export async function POST(req: Request) {
   if (sameOpponentDuel && sameOpponentDuel.length > 0)
     return NextResponse.json({ error: 'Already in a duel with this opponent' }, { status: 409 })
 
-  // Block if already in active duel (real wagers only)
   if (!wager.practice) {
     const { data: activeDuels } = await admin
       .from('duels').select('id').eq('status', 'active')
@@ -91,13 +90,12 @@ export async function POST(req: Request) {
       player1_decision: decision,
     }).eq('id', duel.id)
   } else {
-    // Notify the wager poster that their challenge was accepted
-    await admin.from('notifications').insert({
-      user_id: wager.poster_id,
-      type: 'wager_accepted',
-      title: `⚔️ ${challenger.username} accepted your challenge — ${wager.gold_amount} Gold`,
-      link: `/duel/${duel.id}`,
-    })
+    const title = `⚔️ ${challenger.username} accepted your challenge — ${wager.gold_amount} Gold`
+    const link = `/duel/${duel.id}`
+    await Promise.all([
+      admin.from('notifications').insert({ user_id: wager.poster_id, type: 'wager_accepted', title, link }),
+      sendPushToUser(admin, wager.poster_id, title, link),
+    ])
   }
 
   return NextResponse.json({ duelId: duel.id })
