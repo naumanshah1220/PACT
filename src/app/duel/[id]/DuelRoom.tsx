@@ -249,22 +249,13 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
-      <div className="px-4 py-3 border-b border-[#d8d4cc] flex items-center justify-between">
+      {/* Header — "The Duel" absolutely centred */}
+      <div className="px-4 py-3 border-b border-[#d8d4cc] relative flex items-center">
         <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">&larr; Back</Link>
-        <span className="font-serif text-lg">The Duel</span>
-        <div className="flex items-center gap-3">
-          {realMessages.length > 0 && (
-            <button
-              onClick={handleShareChat}
-              className="font-mono text-[10px] text-[#bbb] hover:text-[#555] transition-colors"
-            >
-              {chatCopied ? 'copied ✓' : 'share chat'}
-            </button>
-          )}
-          <div className="flex items-center gap-1.5 font-mono text-xs">
-            <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
-            <span>{duel.wagers.gold_amount} gold at stake</span>
-          </div>
+        <span className="absolute left-1/2 -translate-x-1/2 font-fell text-xl">The Duel</span>
+        <div className="ml-auto flex items-center gap-1.5 font-mono text-xs">
+          <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
+          <span>{duel.wagers.gold_amount} gold at stake</span>
         </div>
       </div>
 
@@ -281,6 +272,18 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       </div>
 
       <TimerBar deadline={duel.deadline} timerMinutes={duel.wagers.timer_minutes} />
+
+      {/* Share chat — prominent pill below the timer */}
+      {realMessages.length > 0 && (
+        <div className="px-4 py-2 border-b border-[#f0ede6] flex justify-end">
+          <button
+            onClick={handleShareChat}
+            className="font-mono text-[10px] text-[#888] border border-[#d8d4cc] rounded-full px-3 py-1 hover:bg-[#f0ede6] transition-colors"
+          >
+            {chatCopied ? 'Copied ✓' : '↑ Share chat'}
+          </button>
+        </div>
+      )}
 
       {showRaven && !ravenAlreadySent && (
         <div className="mx-4 mt-2">
