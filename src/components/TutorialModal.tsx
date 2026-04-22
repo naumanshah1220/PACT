@@ -12,6 +12,7 @@ const SLIDES = [
     title: 'Post or Accept a Wager',
     body: "Put gold at stake and wait for a challenger — or step up and accept someone else's. You risk it. So do they.",
     icons: ['/icons/coin.png'],
+    iconSize: 120,
   },
   {
     title: 'You Must Both Speak',
@@ -27,6 +28,7 @@ const SLIDES = [
     title: 'Invoke the Seal',
     body: 'When ready, call for the Seal. Both seals placed — decisions revealed. Gold changes hands. No going back.',
     icons: ['/icons/seal.png'],
+    iconSize: 120,
   },
 ]
 
@@ -73,7 +75,7 @@ export default function TutorialModal() {
 
   if (!open) return null
 
-  const { title, body, icons } = SLIDES[slide]
+  const { title, body, icons, iconSize = 160 } = SLIDES[slide]
   const isLast = slide === SLIDES.length - 1
 
   return (
@@ -98,17 +100,15 @@ export default function TutorialModal() {
       >
         <button onClick={close} className="absolute top-4 right-4 font-mono text-xl leading-none text-[#888] hover:text-[#1a1208] transition-colors">&times;</button>
 
-        {/* opacity-only fade — no transform, which would break mix-blend-mode */}
         <div style={{ opacity: animating ? 0 : 1, transition: 'opacity 260ms ease-in-out' }}>
           <div className="flex justify-center items-center gap-4 mb-8">
             {icons.map((src, i) => (
-              // isolate + explicit bg so mix-blend-multiply blends against cream, not a transparent stacking context
               <div key={i} className="isolate" style={{ backgroundColor: '#f5f3ea' }}>
                 <img
                   src={src}
                   alt=""
                   className="object-contain"
-                  style={{ mixBlendMode: 'multiply', width: 160, height: 160 }}
+                  style={{ mixBlendMode: 'multiply', width: iconSize, height: iconSize }}
                 />
               </div>
             ))}
