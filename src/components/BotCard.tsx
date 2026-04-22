@@ -9,8 +9,8 @@ export interface BotOption {
   name: string
   goldAmount: number
   timerMinutes: number
-  disclaimer: string
   displayInitials: string
+  preview: string
 }
 
 export function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLoggedIn: boolean; onRotate: (idx: number) => void }) {
@@ -49,8 +49,8 @@ export function BotCard({ bot, isLoggedIn, onRotate }: { bot: BotOption; isLogge
           </div>
         </div>
       </div>
-      <p className="font-fell text-sm mb-1">{bot.name}</p>
-      <p className="font-mono text-[10px] text-[#888] mb-3 flex-1">{bot.disclaimer}</p>
+      <p className="font-fell text-sm mb-2">{bot.name}</p>
+      <p className="font-mono text-[10px] text-[#666] mb-3 flex-1 italic leading-relaxed">&ldquo;{bot.preview}&rdquo;</p>
       <button onClick={handlePractice} disabled={loading} className="w-full border border-[#1a1208] rounded-lg py-2 font-mono text-[11px] hover:bg-[#1a1208] hover:text-[#EEEDE4] transition-colors active:scale-[0.97] disabled:opacity-50">
         {loading ? 'Starting…' : 'Practice →'}
       </button>
