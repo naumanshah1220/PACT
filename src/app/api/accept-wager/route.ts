@@ -6,7 +6,6 @@ import { BOT_CONFIG, getBotDecision, isBotId } from '@/lib/bots'
 export async function POST(req: Request) {
   const supabase = await createClient()
 
-  // Cookie-based auth (normal flow) or Bearer token (anonymous practice flow)
   let { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     const authHeader = req.headers.get('authorization')
@@ -91,6 +90,14 @@ export async function POST(req: Request) {
       player1_messaged: true,
       player1_decision: decision,
     }).eq('id', duel.id)
+  } else {
+    // Notify the wager poster that their challenge was accepted
+    await admin.from('notifications').insert({
+      user_id: wager.poster_id,
+      type: 'wager_accepted',
+      title: `⚔️ ${challenger.username} accepted your challenge — ${wager.gold_amount} Gold`,
+      link: `/duel/${duel.id}`,
+    })
   }
 
   return NextResponse.json({ duelId: duel.id })
