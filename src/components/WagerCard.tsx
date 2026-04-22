@@ -83,12 +83,12 @@ export function WagerCard({ wager, isNewest, currentUserId, isLoggedIn }: {
     e.stopPropagation()
     const url = `${window.location.origin}/wager/${wager.id}`
     const text = wager.wager_message
-      ? `⚔️ PACT — ${wager.gold_amount} Gold\n"${wager.wager_message}"\nDo you dare accept?`
-      : `⚔️ PACT — ${wager.gold_amount} Gold\nI've posted a challenge. Do you dare accept?`
+      ? `⚔️ ${wager.gold_amount} Gold says you'll betray me.\n\n"${wager.wager_message}"\n\nProve me wrong on PACT — if you dare.\n${url}`
+      : `⚔️ I've wagered ${wager.gold_amount} Gold on PACT — a game of trust and betrayal.\n\nPledge or betray? Accept my challenge:\n${url}`
     if (navigator.share) {
-      try { await navigator.share({ title: 'PACT Challenge', text, url }); return } catch {}
+      try { await navigator.share({ title: 'PACT Challenge', text }); return } catch {}
     }
-    await navigator.clipboard.writeText(`${text}\n${url}`)
+    await navigator.clipboard.writeText(text)
     setShareCopied(true)
     setTimeout(() => setShareCopied(false), 2000)
   }
@@ -132,7 +132,7 @@ export function WagerCard({ wager, isNewest, currentUserId, isLoggedIn }: {
             onClick={handleShare}
             className="w-full border border-[#d8d4cc] rounded-lg py-2 font-mono text-[11px] text-[#888] hover:bg-[#f0ede6] transition-colors"
           >
-            {shareCopied ? 'Link copied ✓' : 'Share challenge ↑'}
+            {shareCopied ? 'Copied ✓' : 'Share challenge ↑'}
           </button>
         </div>
       ) : !isLoggedIn ? (
