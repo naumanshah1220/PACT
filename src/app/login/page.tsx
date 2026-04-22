@@ -19,7 +19,9 @@ export default function LoginPage() {
     setError('')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
-    router.push('/')
+    const params = new URLSearchParams(window.location.search)
+    const redirect = params.get('redirect') || '/'
+    router.push(redirect)
     router.refresh()
   }
 
