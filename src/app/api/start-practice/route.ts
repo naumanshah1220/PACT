@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
-import { BOT_PERSONALITIES, STRATEGY_BOT_IDS, getBotDecision } from '@/lib/bots'
+import { BOT_PERSONALITIES, getBotPersonalityId, getBotDecision } from '@/lib/bots'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -21,8 +21,9 @@ export async function POST(req: Request) {
   if (!personality) return NextResponse.json({ error: 'Invalid bot' }, { status: 400 })
 
   const admin = createAdminClient()
-  const botId = STRATEGY_BOT_IDS[personality.strategy]
+  const botId = getBotPersonalityId(personalityIndex)
 
+  // Ensure the player's user record exists
   const { data: existing } = await admin.from('users').select('id').eq('id', user.id).single()
   if (!existing) {
     const guestNum = Math.floor(Math.random() * 9000) + 1000
@@ -35,6 +36,17 @@ export async function POST(req: Request) {
       newbie_day: 1,
     })
   }
+
+  // Upsert this personality's bot user so the correct name appears in the duel
+  await admin.from('users').upsert({
+    id: botId,
+    username: personality.name,
+    display_initials: personality.displayInitials,
+    gold_balance: 0,
+    honor_score: 0,
+    is_bot: true,
+    newbie_day: 0,
+  }, { onConflict: 'id' })
 
   const decision = getBotDecision(personality.strategy)
   const deadline = new Date(Date.now() + personality.timerMinutes * 60 * 1000).toISOString()
