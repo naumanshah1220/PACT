@@ -60,6 +60,7 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const [sealLoading, setSealLoading] = useState(false)
   const [showRaven, setShowRaven] = useState(false)
   const [hasSentMessage, setHasSentMessage] = useState(false)
+  const [chatCopied, setChatCopied] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const isP1 = currentUserId === duel.player1_id
@@ -152,6 +153,23 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
   const theyHaveSealed = !!liveDuel.seal_requested_by && liveDuel.seal_requested_by !== currentUserId
   const ravenAlreadySent = messages.some(m => m.content === '— a raven was sent —')
 
+  const realMessages = messages.filter(m => m.content !== '— a raven was sent —')
+
+  async function handleShareChat() {
+    if (!realMessages.length) return
+    const lines = realMessages.map(m => {
+      const speaker = m.sender_id === currentUserId ? 'me' : 'them'
+      return `${speaker}: ${m.content}`
+    }).join('\n')
+    const text = `${lines}\n\n⚔️ PACT — ${duel.wagers.gold_amount} Gold\npact.game`
+    if (navigator.share) {
+      try { await navigator.share({ title: 'PACT Duel', text }); return } catch {}
+    }
+    await navigator.clipboard.writeText(text)
+    setChatCopied(true)
+    setTimeout(() => setChatCopied(false), 2000)
+  }
+
   async function sendMessage() {
     if (!input.trim() || sending) return
     setHasSentMessage(true)
@@ -234,9 +252,19 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
       <div className="px-4 py-3 border-b border-[#d8d4cc] flex items-center justify-between">
         <Link href="/" className="font-mono text-xs text-[#888] hover:text-[#111]">&larr; Back</Link>
         <span className="font-serif text-lg">The Duel</span>
-        <div className="flex items-center gap-1.5 font-mono text-xs">
-          <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
-          <span>{duel.wagers.gold_amount} gold at stake</span>
+        <div className="flex items-center gap-3">
+          {realMessages.length > 0 && (
+            <button
+              onClick={handleShareChat}
+              className="font-mono text-[10px] text-[#bbb] hover:text-[#555] transition-colors"
+            >
+              {chatCopied ? 'copied ✓' : 'share chat'}
+            </button>
+          )}
+          <div className="flex items-center gap-1.5 font-mono text-xs">
+            <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
+            <span>{duel.wagers.gold_amount} gold at stake</span>
+          </div>
         </div>
       </div>
 
