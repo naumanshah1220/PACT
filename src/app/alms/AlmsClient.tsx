@@ -77,17 +77,20 @@ export default function AlmsClient({ currentUser, requests }: Props) {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="font-serif text-3xl font-bold">The Alms</h1>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-[#888] mt-1">Give gold, earn honour</p>
+      <div className="mb-6">
+        <img src="/icons/alms.png" alt="" className="w-16 h-16 object-contain mix-blend-multiply mb-3" />
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="font-fell text-3xl">The Alms</h1>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-[#888] mt-1">Give gold, earn honour</p>
+          </div>
+          <button
+            onClick={() => { setShowPost(true); setError('') }}
+            className="bg-[#111] text-white font-sans text-sm font-medium rounded-full px-4 py-1.5 hover:bg-[#333] transition-colors"
+          >
+            Request Alms
+          </button>
         </div>
-        <button
-          onClick={() => { setShowPost(true); setError('') }}
-          className="bg-[#111] text-white font-sans text-sm font-medium rounded-full px-4 py-1.5 hover:bg-[#333] transition-colors"
-        >
-          Request Alms
-        </button>
       </div>
 
       <p className="font-mono text-[11px] text-[#888] mb-4">
@@ -134,7 +137,7 @@ export default function AlmsClient({ currentUser, requests }: Props) {
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#f0ede6]">
                 <div className="flex items-baseline gap-1">
-                  <span className="font-serif text-2xl font-bold">{req.gold_amount}</span>
+                  <span className="font-fell text-2xl">{req.gold_amount}</span>
                   <span className="font-mono text-[11px] text-[#888] uppercase tracking-widest">gold</span>
                 </div>
                 {isOwn ? (
@@ -160,14 +163,14 @@ export default function AlmsClient({ currentUser, requests }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white border border-[#d8d4cc] rounded-[12px] w-full max-w-sm p-6 animate-fade-up">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-serif text-xl">Request Alms</h2>
+              <h2 className="font-fell text-xl">Request Alms</h2>
               <button onClick={() => setShowPost(false)} className="font-mono text-lg text-[#888] hover:text-[#111]">×</button>
             </div>
             <div className="mb-4">
               <label className="font-mono text-[11px] uppercase tracking-widest text-[#888] block mb-2">Amount (1–100 gold)</label>
               <div className="flex items-center gap-3">
                 <input type="range" min={1} max={100} value={amount} onChange={e => setAmount(Number(e.target.value))} className="flex-1 accent-[#111]" />
-                <span className="font-serif text-2xl font-bold w-12 text-right">{amount}</span>
+                <span className="font-fell text-2xl w-12 text-right">{amount}</span>
               </div>
             </div>
             <div className="mb-5">
