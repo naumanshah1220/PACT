@@ -350,10 +350,8 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
         {canSeal && (
           <div className="flex justify-center mt-4">
             {iHaveSealed ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-20 h-20 rounded-full border border-[#d8d4cc] flex items-center justify-center opacity-40">
-                  <img src="/icons/seal.png" alt="" className="w-12 h-12 object-contain" style={{ mixBlendMode: 'multiply' }} />
-                </div>
+              <div className="flex flex-col items-center gap-2 opacity-40">
+                <img src="/icons/seal.png" alt="" className="w-16 h-16 object-contain" style={{ mixBlendMode: 'multiply' }} />
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#aaa]">Seal placed</span>
               </div>
             ) : theyHaveSealed ? (
@@ -363,11 +361,11 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
                   <button
                     onClick={requestSeal}
                     disabled={sealLoading}
-                    className="w-20 h-20 rounded-full border-2 border-[#3B6D11] bg-[#3B6D11]/5 flex items-center justify-center hover:bg-[#3B6D11]/10 hover:shadow-sm active:scale-95 transition-all duration-150 disabled:opacity-40"
+                    className="hover:scale-110 active:scale-95 transition-transform duration-150 disabled:opacity-40"
                   >
                     {sealLoading
                       ? <span className="font-mono text-sm text-[#3B6D11]">…</span>
-                      : <img src="/icons/seal.png" alt="" className="w-12 h-12 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                      : <img src="/icons/seal.png" alt="" className="w-16 h-16 object-contain" style={{ mixBlendMode: 'multiply' }} />
                     }
                   </button>
                   <span className="font-mono text-[8px] tracking-wider uppercase text-[#3B6D11]">Confirm Seal</span>
@@ -378,11 +376,11 @@ export default function DuelRoom({ duel, initialMessages, currentUserId }: Props
                 <button
                   onClick={requestSeal}
                   disabled={sealLoading}
-                  className="w-20 h-20 rounded-full border border-[#d8d4cc] bg-[#faf9f7] flex items-center justify-center hover:border-[#888] hover:shadow-sm active:scale-95 transition-all duration-150 disabled:opacity-40"
+                  className="hover:scale-110 active:scale-95 transition-transform duration-150 disabled:opacity-40"
                 >
                   {sealLoading
                     ? <span className="font-mono text-sm">…</span>
-                    : <img src="/icons/seal.png" alt="" className="w-12 h-12 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                    : <img src="/icons/seal.png" alt="" className="w-16 h-16 object-contain" style={{ mixBlendMode: 'multiply' }} />
                   }
                 </button>
                 <span className="font-mono text-[8px] tracking-wider uppercase text-[#888]">Invoke the Seal</span>
