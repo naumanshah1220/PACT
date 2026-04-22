@@ -48,8 +48,8 @@ export default async function TavernPage() {
     name: p.name,
     goldAmount: p.goldAmount,
     timerMinutes: p.timerMinutes,
-    disclaimer: p.disclaimer,
     displayInitials: p.displayInitials,
+    preview: p.greeting.length > 90 ? p.greeting.slice(0, 90) + '…' : p.greeting,
   }))
 
   const authUser = authResult.data.user
