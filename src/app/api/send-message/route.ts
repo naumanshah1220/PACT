@@ -70,6 +70,27 @@ export async function POST(req: Request) {
     admin.from('duels').update({ [playerField]: true }).eq('id', duelId),
   ])
 
+  // Notify the human opponent — but only if they don't already have an unread message notification for this duel
+  if (!isBotId(opponentId)) {
+    const [{ data: senderProfile }, { count }] = await Promise.all([
+      admin.from('users').select('username').eq('id', user.id).single(),
+      admin.from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', opponentId)
+        .eq('type', 'new_message')
+        .eq('link', `/duel/${duelId}`)
+        .eq('read', false),
+    ])
+    if (!count) {
+      await admin.from('notifications').insert({
+        user_id: opponentId,
+        type: 'new_message',
+        title: `💬 ${senderProfile?.username ?? 'Someone'} sent you a message`,
+        link: `/duel/${duelId}`,
+      })
+    }
+  }
+
   if (isBotId(opponentId)) {
     const { data: sentMsgs } = await admin
       .from('messages')
