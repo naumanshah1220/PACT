@@ -13,7 +13,7 @@ const OUTCOME_CONFIG: Record<Outcome, {
   both_pledge: {
     icon: '/icons/pledge.png',
     title: 'You both pledged.',
-    subtitleFn: (_, stake) => `Both players kept their honour. Each received +${Math.floor(stake * 0.25)} bonus Gold.`,
+    subtitleFn: (_, stake) => `Both players kept their honour. Each received +${Math.floor(stake * 0.5)} bonus Gold.`,
   },
   both_betray: {
     icon: '/icons/betray.png',
@@ -49,7 +49,7 @@ const OUTCOME_CONFIG: Record<Outcome, {
 
 function getGoldDelta(outcome: Outcome, isP1: boolean, stake: number): number {
   switch (outcome) {
-    case 'both_pledge': return Math.floor(stake * 0.25)
+    case 'both_pledge': return Math.floor(stake * 0.5)
     case 'both_betray': return -stake
     case 'both_silent': return -stake
     case 'p1_betray': return isP1 ? stake : -stake
@@ -81,7 +81,7 @@ export default function ResultClient({ duel, currentUserId }: { duel: DuelWithUs
     const origin = window.location.origin
     const wagerMsg = duel.wagers.wager_message
     return wagerMsg
-      ? `⚔️ PACT — ${stake} Gold\n“${wagerMsg}”\n\nThe seal is broken. Did I honour the pact? 👀\n${origin}`
+      ? `⚔️ PACT — ${stake} Gold\n"${wagerMsg}"\n\nThe seal is broken. Did I honour the pact? 👀\n${origin}`
       : `⚔️ PACT — ${stake} Gold\n\nI just played. The seal is broken.\nDid I honour the pact? 👀\n${origin}`
   }
 
