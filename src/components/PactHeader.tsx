@@ -35,9 +35,9 @@ function formatCountdown(ms: number): string {
 }
 
 function getDailyGrant(day: number): number {
-  if (day <= 3) return 50
-  if (day <= 7) return 25
-  return 5
+  if (day <= 3) return 500
+  if (day <= 7) return 250
+  return 50
 }
 
 function timeAgo(ts: string): string {
@@ -108,7 +108,6 @@ export default function PactHeader() {
     }
     try {
       await navigator.serviceWorker.register('/sw.js')
-      // Use .ready to get the guaranteed-active registration, not the pending one from register()
       const reg = await navigator.serviceWorker.ready
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -152,7 +151,6 @@ export default function PactHeader() {
     if (willOpen) markAllRead()
   }
 
-  // Read permission state immediately on mount — don't wait for authUserId
   useEffect(() => {
     if (pushSupported) setPushPermission(Notification.permission)
   }, [])
@@ -178,7 +176,6 @@ export default function PactHeader() {
       })
       .subscribe()
 
-    // If already granted, re-register subscription silently (handles subscription loss)
     if (pushSupported && Notification.permission === 'granted') registerAndSubscribe()
 
     return () => { supabase.removeChannel(channel) }
