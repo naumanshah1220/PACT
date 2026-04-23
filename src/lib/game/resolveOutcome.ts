@@ -60,8 +60,9 @@ export async function resolveOutcome(duelId: string, admin: DBClient) {
 
   switch (outcome) {
     case 'both_pledge': {
-      const bonus = Math.floor(stake * 0.25)
-      const canBonus = hoardBalance >= stake * 0.5
+      // 50% bonus each — total drain from hoard = stake
+      const bonus = Math.floor(stake * 0.5)
+      const canBonus = hoardBalance >= stake
       p1Delta = canBonus ? bonus : 0
       p2Delta = canBonus ? bonus : 0
       hoardDelta = canBonus ? -(bonus * 2) : 0
@@ -91,12 +92,12 @@ export async function resolveOutcome(duelId: string, admin: DBClient) {
 
   if (hoardDelta !== 0 && hoard) {
     let newBalance = hoardBalance + hoardDelta
-    const wasLow = newBalance < 100
-    if (wasLow) newBalance += 200
+    const wasLow = newBalance < 1000
+    if (wasLow) newBalance += 2000
     await admin.from('hoard').update({ balance: newBalance }).eq('id', hoard.id)
     if (wasLow) {
       const msg = HOARD_ANNOUNCEMENTS[Math.floor(Math.random() * HOARD_ANNOUNCEMENTS.length)]
-      await admin.from('hoard_announcements').insert({ message: msg, gold_added: 200 })
+      await admin.from('hoard_announcements').insert({ message: msg, gold_added: 2000 })
     }
   }
 
