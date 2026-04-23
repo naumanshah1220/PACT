@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single()
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  const maxWager = profile.newbie_day <= 3 ? 5 : profile.newbie_day <= 7 ? 10 : profile.gold_balance
+  const maxWager = profile.newbie_day <= 3 ? 200 : profile.newbie_day <= 7 ? 400 : profile.gold_balance
   if (goldAmount > maxWager) return NextResponse.json({ error: `Max wager is ${maxWager}` }, { status: 400 })
   if (goldAmount > profile.gold_balance) return NextResponse.json({ error: 'Insufficient gold' }, { status: 400 })
   if (goldAmount < 1) return NextResponse.json({ error: 'Minimum wager is 1' }, { status: 400 })
