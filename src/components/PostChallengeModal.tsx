@@ -23,8 +23,8 @@ interface Props {
 }
 
 export default function PostChallengeModal({ currentUser, onClose }: Props) {
-  const maxWager = currentUser.newbie_day <= 3 ? 50
-    : currentUser.newbie_day <= 7 ? 100
+  const maxWager = currentUser.newbie_day <= 3 ? 200
+    : currentUser.newbie_day <= 7 ? 400
     : currentUser.gold_balance
 
   const [gold, setGold] = useState(Math.min(50, maxWager))
@@ -72,7 +72,7 @@ export default function PostChallengeModal({ currentUser, onClose }: Props) {
             />
             <div className="flex items-center gap-1 justify-end">
               <img src="/icons/coin.png" alt="" className="w-6 h-6 object-contain" style={{ mixBlendMode: 'multiply' }} />
-              <span className="font-fell text-2xl w-8 text-right">{gold}</span>
+              <span className="font-fell text-2xl w-12 text-right">{gold}</span>
             </div>
           </div>
           <p className="font-mono text-[10px] text-[#888] mt-1">Balance: {currentUser.gold_balance} &middot; Max: {maxWager}</p>
