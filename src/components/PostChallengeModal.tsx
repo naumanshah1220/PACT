@@ -23,11 +23,11 @@ interface Props {
 }
 
 export default function PostChallengeModal({ currentUser, onClose }: Props) {
-  const maxWager = currentUser.newbie_day <= 3 ? 5
-    : currentUser.newbie_day <= 7 ? 10
+  const maxWager = currentUser.newbie_day <= 3 ? 50
+    : currentUser.newbie_day <= 7 ? 100
     : currentUser.gold_balance
 
-  const [gold, setGold] = useState(Math.min(5, maxWager))
+  const [gold, setGold] = useState(Math.min(50, maxWager))
   const [timerIdx, setTimerIdx] = useState(2)
   const [spectatorsAllowed, setSpectatorsAllowed] = useState(true)
   const [wagerMessage, setWagerMessage] = useState('')
