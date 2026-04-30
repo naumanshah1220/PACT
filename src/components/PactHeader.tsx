@@ -15,29 +15,10 @@ type NotifRow = {
   created_at: string
 }
 
-function getNextMidnightMs(): number {
-  const now = new Date()
-  const next = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate() + 1,
-    0, 0, 0
-  ))
-  return next.getTime() - now.getTime()
-}
-
-function formatCountdown(ms: number): string {
-  const s = Math.floor(ms / 1000)
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const sec = s % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-}
-
-function getDailyGrant(day: number): number {
-  if (day <= 3) return 500
-  if (day <= 7) return 250
-  return 50
+type DailyGrantInfo = {
+  streak: number
+  grant: number
+  alreadyClaimed: boolean
 }
 
 function timeAgo(ts: string): string {
@@ -63,13 +44,15 @@ const pushSupported = typeof window !== 'undefined'
 export default function PactHeader() {
   const [user, setUser] = useState<HeaderUser | null>(null)
   const [authUserId, setAuthUserId] = useState<string | null>(null)
-  const [countdown, setCountdown] = useState('')
   const [notifications, setNotifications] = useState<NotifRow[]>([])
   const [showNotifs, setShowNotifs] = useState(false)
+  const [showGoldPopup, setShowGoldPopup] = useState(false)
+  const [dailyGrant, setDailyGrant] = useState<DailyGrantInfo | null>(null)
   const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null)
   const [pushLoading, setPushLoading] = useState(false)
   const supabase = useRef(createClient()).current
   const notifRef = useRef<HTMLDivElement>(null)
+  const goldRef = useRef<HTMLDivElement>(null)
 
   async function fetchUser() {
     const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -81,6 +64,22 @@ export default function PactHeader() {
       .eq('id', authUser.id)
       .single()
     if (data) setUser(data as HeaderUser)
+  }
+
+  async function claimDailyGrant() {
+    try {
+      const res = await fetch('/api/claim-daily-grant', { method: 'POST' })
+      if (!res.ok) return
+      const data = await res.json()
+      setDailyGrant({
+        streak: data.streak,
+        grant: data.grant,
+        alreadyClaimed: data.already_claimed,
+      })
+      if (data.grant > 0) {
+        setUser(prev => prev ? { ...prev, gold_balance: prev.gold_balance + data.grant } : prev)
+      }
+    } catch {}
   }
 
   async function fetchNotifications() {
@@ -123,11 +122,8 @@ export default function PactHeader() {
           auth: json.keys?.auth,
         }),
       })
-      if (res.ok) {
-        setPushPermission('granted')
-      } else {
-        console.error('[PACT] Push subscribe API failed:', await res.text())
-      }
+      if (res.ok) setPushPermission('granted')
+      else console.error('[PACT] Push subscribe API failed:', await res.text())
     } catch (err) {
       console.error('[PACT] Push registration error:', err)
     }
@@ -147,8 +143,14 @@ export default function PactHeader() {
 
   function handleBellClick() {
     const willOpen = !showNotifs
+    setShowGoldPopup(false)
     setShowNotifs(willOpen)
     if (willOpen) markAllRead()
+  }
+
+  function handleGoldClick() {
+    setShowNotifs(false)
+    setShowGoldPopup(v => !v)
   }
 
   useEffect(() => {
@@ -163,7 +165,9 @@ export default function PactHeader() {
 
   useEffect(() => {
     if (!authUserId) return
+    claimDailyGrant()
     fetchNotifications()
+
     const channel = supabase
       .channel('user-notifications')
       .on('postgres_changes', {
@@ -182,16 +186,12 @@ export default function PactHeader() {
   }, [authUserId])
 
   useEffect(() => {
-    function tick() { setCountdown(formatCountdown(getNextMidnightMs())) }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [])
-
-  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotifs(false)
+      }
+      if (goldRef.current && !goldRef.current.contains(e.target as Node)) {
+        setShowGoldPopup(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -202,6 +202,8 @@ export default function PactHeader() {
   const showPushPrompt = pushSupported && pushPermission !== 'granted' && pushPermission !== 'denied'
   const showPushDenied = pushSupported && pushPermission === 'denied'
   const showPushUnsupported = !pushSupported && typeof window !== 'undefined'
+
+  const tomorrowGrant = dailyGrant ? 200 + dailyGrant.streak * 100 : 200
 
   return (
     <header className="border-b border-[#d8d4cc] bg-[#eae8e1] sticky top-0 z-50">
@@ -217,19 +219,77 @@ export default function PactHeader() {
           <nav className="flex items-center gap-2">
             {user ? (
               <>
-                <Link href="/profile" className="flex flex-col bg-white border border-[#d8d4cc] rounded-xl px-3 py-1.5 font-mono text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <img src="/icons/coin.png" alt="" className="w-[18px] h-[18px] object-contain" style={{ mixBlendMode: 'multiply' }} />
-                    <span className="font-medium">{user.gold_balance}</span>
-                    <span className="text-[#888]">Gold</span>
-                  </div>
-                  {countdown && (
-                    <span className="text-[9px] text-[#bbb] leading-tight mt-0.5">
-                      +{getDailyGrant(user.newbie_day)} in {countdown}
-                    </span>
-                  )}
-                </Link>
+                {/* Gold card — click to open popup */}
+                <div className="relative" ref={goldRef}>
+                  <button
+                    onClick={handleGoldClick}
+                    className="flex flex-col bg-white border border-[#d8d4cc] rounded-xl px-3 py-1.5 font-mono text-xs hover:bg-[#faf9f7] transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <img src="/icons/coin.png" alt="" className="w-[18px] h-[18px] object-contain" style={{ mixBlendMode: 'multiply' }} />
+                      <span className="font-medium">{user.gold_balance}</span>
+                      <span className="text-[#888]">Gold</span>
+                    </div>
+                    {dailyGrant && (
+                      <span className="text-[9px] leading-tight mt-0.5 text-left">
+                        {dailyGrant.streak > 1
+                          ? <span className="text-[#c17d2a]">🔥 {dailyGrant.streak} day streak</span>
+                          : <span className="text-[#bbb]">tap for daily gold</span>
+                        }
+                      </span>
+                    )}
+                  </button>
 
+                  {showGoldPopup && (
+                    <div className="absolute right-0 top-[calc(100%+8px)] w-64 bg-white border border-[#d8d4cc] rounded-xl shadow-lg z-50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-[#f0ede6]">
+                        <span className="font-mono text-[11px] uppercase tracking-widest text-[#888]">Daily Gold</span>
+                      </div>
+
+                      <div className="px-4 py-4">
+                        {dailyGrant && dailyGrant.streak > 1 && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-xl">🔥</span>
+                            <div>
+                              <p className="font-fell text-lg leading-tight">{dailyGrant.streak} day streak</p>
+                              <p className="font-mono text-[9px] text-[#888]">keep it going</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {dailyGrant?.alreadyClaimed ? (
+                          <div className="mb-4">
+                            <p className="font-mono text-[10px] text-[#888] mb-0.5">Claimed today</p>
+                            <p className="font-fell text-2xl text-[#3B6D11]">
+                              +{200 + (dailyGrant.streak - 1) * 100} Gold ✓
+                            </p>
+                          </div>
+                        ) : dailyGrant?.grant ? (
+                          <div className="mb-4">
+                            <p className="font-mono text-[10px] text-[#888] mb-0.5">Just received</p>
+                            <p className="font-fell text-2xl text-[#3B6D11]">+{dailyGrant.grant} Gold ✓</p>
+                          </div>
+                        ) : null}
+
+                        <div className="bg-[#faf9f7] rounded-lg px-3 py-2">
+                          <p className="font-mono text-[10px] text-[#888]">Return tomorrow</p>
+                          <p className="font-fell text-base text-[#1a1208]">+{tomorrowGrant} Gold</p>
+                          {dailyGrant && dailyGrant.streak > 0 && (
+                            <p className="font-mono text-[9px] text-[#c17d2a] mt-0.5">
+                              🔥 {dailyGrant.streak + 1} day streak
+                            </p>
+                          )}
+                        </div>
+
+                        <p className="font-mono text-[9px] text-[#ccc] mt-3 leading-relaxed">
+                          Miss a day and your streak resets to zero.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notifications bell */}
                 <div className="relative" ref={notifRef}>
                   <button
                     onClick={handleBellClick}
@@ -268,9 +328,7 @@ export default function PactHeader() {
                               key={n.id}
                               href={n.link ?? '/'}
                               onClick={() => setShowNotifs(false)}
-                              className={`flex items-start gap-3 px-4 py-3 hover:bg-[#faf9f7] transition-colors ${
-                                !n.read ? 'bg-[#fdf8f2]' : ''
-                              }`}
+                              className={`flex items-start gap-3 px-4 py-3 hover:bg-[#faf9f7] transition-colors ${!n.read ? 'bg-[#fdf8f2]' : ''}`}
                             >
                               <div className="flex-1 min-w-0">
                                 <p className="font-sans text-xs text-[#111] leading-snug">{n.title}</p>
@@ -312,6 +370,7 @@ export default function PactHeader() {
                   )}
                 </div>
 
+                {/* Avatar — profile link */}
                 <Link href="/profile" className="w-8 h-8 rounded-full bg-[#f0ede6] border border-[#d8d4cc] flex items-center justify-center font-mono text-xs font-medium">
                   {user.display_initials}
                 </Link>
